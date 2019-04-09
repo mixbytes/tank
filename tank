@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+set -e
+
+libdir="lib"
+_playbook="${libdir}/tools/ansible/play.yml"
+
+configdir="${HOME}/.tank"
+configfile="${configdir}/tank.ini"
+terraformvarsfile="${configdir}/tank.tfvars"
+cache_dir="${configdir}/cache"
+
+
+init(){
+  terraform init
+}
+
+refresh(){
+  terraform refresh \
+    -var-file=${terraformvarsfile}
+}
+
+plan(){
+  terraform plan \
+    -var-file=${terraformvarsfile}
+}
+
+apply(){
+  terraform apply \
+    -var-file=${terraformvarsfile}
+}
+
+list(){
+  terraform output
+}
+
+destroy(){
+  terraform destroy \
+    -var-file=${terraformvarsfile}
+}
+
+dependency(){
+  ANSIBLE_ROLES_PATH=${configdir}/roles \
+    ANSIBLE_CONFIG=${libdir}/tools/ansible/ansible.cfg \
+    ansible-galaxy install -f -r ${libdir}/tools/ansible/ansible-requirements.yml
+}
+
+provision(){
+  DO_API_TOKEN=${api_token} \
+    ANSIBLE_ROLES_PATH=${configdir}/roles \
+    ANSIBLE_CONFIG=${libdir}/tools/ansible/ansible.cfg \
+    ansible-playbook \
+    -f100 -u root -i ${_ansible_inventory} \
+    -e count="${bc_prod_num}" \
+    -e bc_private_interface="eth0" \
+    -e bc_docker_registry_login="${docker_registry_login}" \
+    -e bc_docker_registry_url="${docker_registry_url}" \
+    -e bc_docker_username="${docker_username}" \
+    -e bc_docker_password="${docker_password}" \
+    ${_playbook}
+}
+
+test_run(){
+  ANSIBLE_ROLES_PATH=${configdir}/roles \
+    ANSIBLE_CONFIG=${libdir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "bench"
+}
+
+config(){
+  echo "Grafana: $(terraform output monitoring_ip):3000"
+  echo "Prometheus: $(terraform output monitoring_ip):9090"
+}
+
+groups(){
+  DO_API_TOKEN=${api_token} ansible localhost -i digital_ocean.py -m debug -a 'var=groups'
+}
+
+config_read(){
+  if [ ! -f ${configfile} ]; then
+    config_create
+    source ${configfile}
+    init
+  else
+    source ${configfile}
+  fi
+  set_provider
+}
+
+config_create(){
+  read -p "Your Cloud Provider [DigitalOcean]: " provider
+  provider=${provider:-DigitalOcean}
+  read -p "API Token [${DO_API_TOKEN}]: " api_token
+  api_token=${api_token:-$DO_API_TOKEN}
+  read -p "Number of Producer nodes [4]: " bc_prod_num
+  bc_prod_num=${bc_prod_num:-4}
+  read -p "Path to ssh private key [~/.ssh/id_rsa]: " path_pvt_key
+  path_pvt_key=${path_pvt_key:-${HOME}/.ssh/id_rsa}
+  path_pub_key="${path_pvt_key}.pub"
+  read -p "Docker registry private? [true]: " docker_registry_login
+  docker_registry_login=${docker_registry_login:-true}
+  read -p "Docker registry url [${docker_registry_url}]: " docker_registry_url
+  docker_registry_url=${docker_registry_url:-registry.gitlab.com}
+  read -p "Docker registry username [${docker_username}]: " docker_username
+  read -s -p "Docker registry password [${docker_password}]: " docker_password
+
+  echo "\n=========== Check ======="
+  echo "Cloud Provider: ${provider}"
+  echo "API Token: ${api_token}"
+  echo "Number of Producer nodes: ${bc_prod_num}"
+  echo "Private key: "${path_pvt_key}""
+  echo "Puplic key: "${path_pub_key}""
+
+  read -p "Continue? " cont
+
+  mkdir -p $configdir
+  touch -c ${configfile}
+  touch -c ${terraformvarsfile}
+  echo "provider=${provider}" > ${configfile}
+  echo "api_token=${api_token}" >> ${configfile}
+  echo "bc_prod_num=${bc_prod_num}" >> ${configfile}
+  echo "path_pvt_key="${path_pvt_key}"" >> ${configfile}
+  echo "path_pub_key="${path_pub_key}"" >> ${configfile}
+  echo "docker_registry_login="${docker_registry_login}"" >> ${configfile}
+  echo "docker_registry_url="${docker_registry_url}"" >> ${configfile}
+  echo "docker_username="${docker_username}"" >> ${configfile}
+  echo "docker_password="${docker_password}"" >> ${configfile}
+
+  echo "do_token = \"${api_token}\"" > ${terraformvarsfile}
+  echo "pub_key = \"${path_pub_key}\"" >> ${terraformvarsfile}
+  echo "pvt_key = \"${path_pvt_key}\"" >> ${terraformvarsfile}
+  echo "ssh_fingerprint = \"$(ssh-keygen -E md5 -lf ${path_pub_key} | awk '{print $2}' | cut -c 5-)\"" >> ${terraformvarsfile}
+  echo "bc_count_prod_instances = \"${bc_prod_num}\"" >> ${terraformvarsfile}
+  echo "setup_id = \"$(whoami)\"" >> ${terraformvarsfile}
+}
+
+set_provider(){
+  provider="digitalocean"
+  _ansible_inventory="${libdir}/providers/${provider}/inventory.py"
+}
+
+main(){
+  config_read
+}
+
+if [ $# -eq 0 ]; then
+  main
+  apply
+  dependency
+  provision
+  config
+else
+  while (( "$#" )); do
+    main
+    $1
+    shift
+  done
+fi

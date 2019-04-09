@@ -1,0 +1,54 @@
+---
+- name: Prepare 1
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Install python2 for Ansible
+      raw: bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qqy python-minimal)"
+      register: output
+      changed_when:
+        - output.stdout != ""
+        - output.stdout != "\r\n"
+    - name: Gathering Facts
+      setup:
+
+- name: Prepare 2
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - role: geerlingguy.docker
+    - role: azavea.ansible-pip
+
+- name: Converge boot node
+  hosts: "*boot*"
+  become: true
+  vars:
+    bc_cyberos_comp_state_wallet: present
+    bc_cyberos_comp_state_boot: present
+    bc_cyberos_comp_state_bench: present
+    install_promstack: true
+    bc_cyberos_node_id: 0
+  roles:
+    - role: cyberos
+
+- name: Converge producer node
+  hosts: "*producer*"
+  become: true
+  vars:
+    bc_cyberos_comp_state_prod: present
+    bc_cyberos_comp_state_bench: present
+    install_promstack: true
+    bc_cyberos_node_id: "{{ play_hosts.index(inventory_hostname) | int }}"
+  roles:
+    - role: cyberos
+
+- name: Converge monitoring node
+  hosts: "*monitoring*"
+  become: true
+  vars:
+    bc_cyberos_comp_state_monitoring: present
+    install_promstack: true
+  roles:
+    - role: cyberos
