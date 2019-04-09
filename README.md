@@ -3,6 +3,7 @@
 ### Requirements
 
 - python 2.7
+- Terraform v0.11.13
 
 ### Install
 
