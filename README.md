@@ -24,5 +24,5 @@ tank deploy
 #### 2. Run bench
 
 ```shell
-./tank test_run
+tank test_run
 ```

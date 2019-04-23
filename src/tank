@@ -19,6 +19,7 @@ trap 'echo "Stopped"; exit 0' SIGINT SIGTERM
 # TODO: If setup_id exists in config, ignore generate it.
 # TODO: Generate TF_VARs on the fly from tank.ini (remove *.tfvars configs)
 # TODO: Add option for update docker image and wrapper.
+# TODO: Add optional proxy for deploy w/o VPN when need it.
 
 function config_read(){
   if [ ! -f ${_tank_config_file} ]; then
