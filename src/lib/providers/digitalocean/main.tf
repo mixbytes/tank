@@ -1,6 +1,19 @@
-resource "digitalocean_droplet" "test-cyberos-boot" {
+variable "do_token" {}
+variable "pub_key" {}
+variable "pvt_key" {}
+variable "ssh_fingerprint" {}
+variable "bc_count_prod_instances" {}
+variable "setup_id" {}
+variable "blockchain_name" {}
+
+provider "digitalocean" {
+  version = "~> 1.1"
+  token = "${var.do_token}"
+}
+
+resource "digitalocean_droplet" "tank-boot" {
     image = "ubuntu-18-04-x64"
-    name = "test-${var.setup_id}-cyberos-boot"
+    name = "tank-${var.blockchain_name}-${var.setup_id}-boot"
     region = "fra1"
     size = "512mb"
     private_networking = true
@@ -20,9 +33,9 @@ resource "digitalocean_droplet" "test-cyberos-boot" {
   }
 }
 
-resource "digitalocean_droplet" "test-cyberos-producer" {
+resource "digitalocean_droplet" "tank-producer" {
     image = "ubuntu-18-04-x64"
-    name = "test-${var.setup_id}-cyberos-producer-${count.index}"
+    name = "tank-${var.blockchain_name}-${var.setup_id}-producer-${count.index}"
     count = "${var.bc_count_prod_instances}"
     region = "fra1"
     size = "512mb"
@@ -43,9 +56,9 @@ resource "digitalocean_droplet" "test-cyberos-producer" {
   }
 }
 
-resource "digitalocean_droplet" "test-cyberos-monitoring" {
+resource "digitalocean_droplet" "tank-monitoring" {
     image = "ubuntu-18-04-x64"
-    name = "test-${var.setup_id}-cyberos-monitoring"
+    name = "tank-${var.blockchain_name}-${var.setup_id}-monitoring"
     region = "fra1"
     size = "512mb"
     private_networking = true
@@ -65,18 +78,22 @@ resource "digitalocean_droplet" "test-cyberos-monitoring" {
   }
 }
 
-output "boot_ip" {
-    value = "${digitalocean_droplet.test-cyberos-boot.ipv4_address}"
+output "Boot node IP address" {
+    value = "${digitalocean_droplet.tank-boot.ipv4_address}"
 }
 
-output "producer_ip" {
-    value = "${digitalocean_droplet.test-cyberos-producer.*.ipv4_address}"
+output "Producers nodes IP addresses" {
+    value = "${digitalocean_droplet.tank-producer.*.ipv4_address}"
 }
 
-output "monitoring_ip" {
-    value = "${digitalocean_droplet.test-cyberos-monitoring.ipv4_address}"
+output "Monitoring instance IP address" {
+    value = "${digitalocean_droplet.tank-monitoring.ipv4_address}"
 }
 
-output "setup_id" {
+output "Blockchain name" {
+    value = "${var.blockchain_name}"
+}
+
+output "Setup ID" {
     value = "${var.setup_id}"
 }

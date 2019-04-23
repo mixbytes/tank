@@ -1,6 +1,7 @@
 ---
 - name: Prepare 1
   hosts: all
+  strategy: free
   become: true
   gather_facts: false
   tasks:
@@ -15,6 +16,7 @@
 
 - name: Prepare 2
   hosts: all
+  strategy: free
   become: true
   gather_facts: true
   roles:
@@ -30,6 +32,7 @@
     bc_cyberos_comp_state_bench: present
     install_promstack: true
     bc_cyberos_node_id: 0
+    bc_cyberos_plugin_randpa: present
   roles:
     - role: cyberos
 
@@ -41,6 +44,7 @@
     bc_cyberos_comp_state_bench: present
     install_promstack: true
     bc_cyberos_node_id: "{{ play_hosts.index(inventory_hostname) | int }}"
+    bc_cyberos_plugin_randpa: present
   roles:
     - role: cyberos
 
@@ -50,5 +54,7 @@
   vars:
     bc_cyberos_comp_state_monitoring: present
     install_promstack: true
+    admin_user: tank
+    admin_password: tank
   roles:
     - role: cyberos

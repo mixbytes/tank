@@ -3,3 +3,7 @@
 *.tfstate.backup
 *.cache
 tmp
+.env
+.idea
+build
+.vagrant

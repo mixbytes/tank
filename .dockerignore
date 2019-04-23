@@ -1,0 +1,6 @@
+.terraform
+.git
+.idea
+state
+.gitignore
+.dockerignore

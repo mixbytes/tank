@@ -1,0 +1,424 @@
+#!/usr/bin/env bash
+set -e
+
+trap 'echo "Stopped"; exit 0' SIGINT SIGTERM
+
+# TODO: [done] Add Vagrantfile for testing tank on Linux host
+# TODO: [done] Add Makefile and targets for build, pack, push
+# TODO: [done] Split commands, which need to read config and which can work w/o it.
+# FIXME: [fixed] Cannot terminate docker container with Ctrl-C
+# FIXME: [fixed] If tank run in docker on Linux, config-create exit with error 'Permission denied'
+# TODO: [done] Encrypt passwords in config file
+# TODO: [WIP] Add Google provider
+# TODO: Make async of the Ansible task 'Collect facts about all targets' (for example: http://toroid.org/ansible-parallel-dispatch)
+# TODO: Add pull to all docker containers, that come actual tag.
+# TODO: Replace pause to healthchek after start of container.
+# TODO: Add ability to switch blockchain version
+# TODO: Add ability to add additional ssh public keys to cluster
+# TODO: Add autogenerate documentation
+# TODO: If setup_id exists in config, ignore generate it.
+# TODO: Generate TF_VARs on the fly from tank.ini (remove *.tfvars configs)
+# TODO: Add option for update docker image and wrapper.
+
+function config_read(){
+  if [ ! -f ${_tank_config_file} ]; then
+		echo "Config doesn't exist. Please run 'tank config-create'"
+		exit 1
+  else
+    source ${_tank_config_file}
+    docker_password=$(_pass_dec "${docker_password}" "${_tank_enc_salt}")
+  fi
+}
+
+function _pass_enc(){
+	local _salt=$2
+	local _pass_enc=$(echo "$1" | openssl enc -base64 -e -aes-256-cbc -nosalt  -pass pass:${_salt})
+	echo "${_pass_enc}"
+}
+
+function _pass_dec(){
+	local _salt=$2
+	local _pass_dec=$(echo "$1" | openssl enc -base64 -d -aes-256-cbc -nosalt -pass pass:${_salt})
+	echo "${_pass_dec}"
+}
+
+function init(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+  terraform init \
+  -backend-config "path=${_terraform_state_file}" \
+  ${_terraform_provider_dir}
+}
+
+function refresh(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+  terraform refresh \
+    -var-file=${_terraform_vars_file} \
+    -state=${_terraform_state_file} \
+    ${_terraform_provider_dir}
+}
+
+function plan(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+	TF_VAR_state_path=${_terraform_state_file} \
+  terraform plan \
+    -var-file=${_terraform_vars_file} \
+    ${_terraform_provider_dir}
+}
+
+function state(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+  terraform state pull \
+    -var-file=${_terraform_vars_file} \
+    ${_terraform_provider_dir}
+}
+
+function apply(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+	TF_VAR_state_path=${_terraform_state_file} \
+  terraform apply \
+    -var-file=${_terraform_vars_file} \
+    ${_terraform_provider_dir}
+}
+
+function destroy(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+	TF_VAR_state_path=${_terraform_state_file} \
+  terraform destroy \
+    -var-file=${_terraform_vars_file} \
+    ${_terraform_provider_dir}
+  rm -f *.tfstate*
+}
+
+function dependency(){
+	cd ${_terraform_provider_dir} && \
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible-galaxy install -f -r ${_tank_lib_dir}/tools/ansible/ansible-requirements.yml
+}
+
+function provision(){
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+  DO_API_TOKEN=${api_token} \
+    ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible-playbook \
+    -f100 -u root -i ${_ansible_inventory} \
+    -e count="${bc_prod_num}" \
+    -e bc_private_interface="eth0" \
+    -e bc_docker_registry_login="${docker_registry_login}" \
+    -e bc_docker_registry_url="${docker_registry_url}" \
+    -e bc_docker_username="${docker_username}" \
+    -e bc_docker_password="${docker_password}" \
+    ${_ansible_playbook}
+}
+
+function test_run(){
+	# TODO: Add the ability to set TPS
+	cd ${_terraform_provider_dir} && \
+	TF_LOG=${_terraform_log_level} \
+	TF_DATA_DIR=${_tank_state_dir}/.terraform \
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "bench"
+}
+
+function restart(){
+	cd ${_terraform_provider_dir}
+	export TF_LOG=${_terraform_log_level}
+	export TF_DATA_DIR=${_tank_state_dir}/.terraform
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker restart cyberos-boot"
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "docker restart cyberos-prod"
+}
+
+function clean(){
+	cd ${_terraform_provider_dir}
+	export TF_LOG=${_terraform_log_level}
+	export TF_DATA_DIR=${_tank_state_dir}/.terraform
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker stop cyberos-boot"
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "rm -rf /opt/cyberos/boot/state/"
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "docker stop cyberos-prod"
+  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
+    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "rm -rf /opt/cyberos/prod/state/"
+}
+
+function config(){
+	cd ${_terraform_provider_dir}
+	export TF_LOG=${_terraform_log_level}
+	export TF_DATA_DIR=${_tank_state_dir}/.terraform
+  echo "Grafana: http://$(terraform output "Monitoring instance IP address"):3000"
+  echo "Prometheus: http://$(terraform output "Monitoring instance IP address"):9090"
+}
+
+function groups(){
+	cd ${_terraform_provider_dir}
+	export TF_LOG=${_terraform_log_level}
+	export TF_DATA_DIR=${_tank_state_dir}/.terraform
+  DO_API_TOKEN=${api_token} ansible localhost -i ${_ansible_inventory} -m debug -a 'msg="{{ groups }}"'
+}
+
+function config_show(){
+  echo "Blockchain: ${blockchain_name}"
+  echo "Setup ID: "${setup_id}""
+  echo "Cloud Provider: ${provider}"
+  echo "API Token: ${api_token}"
+  echo "Number of Producer nodes: ${bc_prod_num}"
+  echo "Private key: "${path_pvt_key}""
+  echo "Puplic key: "${path_pub_key}""
+  if [[ "$docker_registry_login" == "true" ]]; then
+    echo "docker_registry_url: "${docker_registry_url}""
+    echo "docker_username: "${docker_username}""
+    echo "docker_password: "******""
+  fi
+}
+
+function config_list(){
+	ls -a -1
+}
+
+function config-create(){
+  if [ -f ${_tank_config_file} ]; then
+    echo "Config already exist."
+    exit 0
+  fi
+
+  read -p "Blockchain [cyberos]: " blockchain_name
+  blockchain_name=${blockchain_name:-cyberos}
+  read -p "Your Cloud Provider [digitalocean]: " provider
+  provider=${provider:-digitalocean}
+  read -p "API Token [${DO_API_TOKEN}]: " api_token
+  api_token=${api_token:-$DO_API_TOKEN}
+  read -p "Number of Producer nodes [${bc_prod_num}]: " bc_prod_num
+  bc_prod_num=${bc_prod_num:-$bc_prod_num}
+  read -p "Path to ssh private key [~/.ssh/id_rsa]: " path_pvt_key
+  path_pvt_key=${path_pvt_key:-${_tank_var_dir}/.ssh/id_rsa}
+  path_pub_key="${path_pvt_key}.pub"
+  read -p "Docker registry private? [false]: " docker_registry_login
+	docker_registry_login=${docker_registry_login:-false}
+  if [[ "$docker_registry_login" == "true" ]]; then
+		read -p "Docker registry url [registry.gitlab.com]: " docker_registry_url
+		docker_registry_url=${docker_registry_url:-registry.gitlab.com}
+		read -p "Docker registry username [${docker_username}]: " docker_username
+		docker_username=${docker_username:-$docker_username}
+		read -s -p "Docker registry password: " docker_password
+  fi
+	setup_id="$(date +%s | tail -c 6)"
+
+  echo "\n=========== Check ======="
+  config_show
+
+  read -p "Continue? " cont
+
+  _terraform_vars_file="${_tank_state_dir}/${provider}.tfvars"
+
+  mkdir -p $_tank_state_dir
+  touch ${_tank_config_file}
+  touch ${_terraform_vars_file}
+  echo "blockchain_name=${blockchain_name}" > ${_tank_config_file}
+  echo "provider=${provider}" >> ${_tank_config_file}
+  echo "api_token=${api_token}" >> ${_tank_config_file}
+  echo "bc_prod_num=${bc_prod_num}" >> ${_tank_config_file}
+  echo "path_pvt_key="${path_pvt_key}"" >> ${_tank_config_file}
+  echo "path_pub_key="${path_pub_key}"" >> ${_tank_config_file}
+  echo "docker_registry_login="${docker_registry_login}"" >> ${_tank_config_file}
+  echo "docker_registry_url="${docker_registry_url}"" >> ${_tank_config_file}
+  echo "docker_username="${docker_username}"" >> ${_tank_config_file}
+  echo "docker_password="$(_pass_enc ${docker_password} ${_tank_enc_salt})"" >> ${_tank_config_file}
+
+  echo "do_token = \"${api_token}\"" > ${_terraform_vars_file}
+  echo "pub_key = \"${path_pub_key}\"" >> ${_terraform_vars_file}
+  echo "pvt_key = \"${path_pvt_key}\"" >> ${_terraform_vars_file}
+  echo "ssh_fingerprint = \"$(ssh-keygen -E md5 -lf ${path_pub_key} | awk '{print $2}' | cut -c 5-)\"" >> ${_terraform_vars_file}
+  echo "bc_count_prod_instances = \"${bc_prod_num}\"" >> ${_terraform_vars_file}
+  echo "setup_id = \"${setup_id}\"" >> ${_terraform_vars_file}
+  echo "blockchain_name = \"${blockchain_name}\"" >> ${_terraform_vars_file}
+}
+
+function install(){
+cat <<\EOF1
+#!/usr/bin/env bash
+
+if [[ $(whoami) == "root" ]]; then
+  MAKE_ME_ROOT=
+else
+  MAKE_ME_ROOT=sudo
+fi
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+	if [ -f /etc/redhat-release ]; then
+		echo "Redhat Linux detected."
+	elif [ -f /etc/SuSE-release ]; then
+		echo "Suse Linux detected."
+	elif [ -f /etc/arch-release ]; then
+		echo "Arch Linux detected."
+	elif [ -f /etc/mandrake-release ]; then
+		echo "Mandrake Linux detected."
+	elif [ -f /etc/debian_version ]; then
+		echo "Ubuntu/Debian Linux detected."
+	else
+		echo "Unknown Linux distribution."
+	fi
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+	echo "Mac OS (Darwin) detected."
+elif [[ "$OSTYPE" == "freebsd"* ]]; then
+	echo "FreeBSD detected."
+else
+	echo "Unknown operating system."
+fi
+
+function install_docker_wrapper(){
+echo "Installing to /usr/local/bin/tank"
+$MAKE_ME_ROOT bash -c 'touch -c /usr/local/bin/tank'
+$MAKE_ME_ROOT bash -c 'cat <<\EOF2 > /usr/local/bin/tank
+#!/usr/bin/env bash
+
+# tank
+# A wrapper script for invoking tank with docker
+# Put this script in $PATH as `tank`
+
+PROGNAME="$(basename $0)"
+VERSION="v0.0.1"
+
+# Helper functions for guards
+error(){
+  error_code=$1
+  echo "ERROR: $2" >&2
+  echo "( $PROGNAME wrapper version: $VERSION, error code: $error_code )" >&2
+  exit $1
+}
+check_cmd_in_path(){
+  cmd=$1
+  which $cmd > /dev/null 2>&1 || error 1 "$cmd not found!"
+}
+
+# Guards (checks for dependencies)
+check_cmd_in_path docker
+
+# Set up mounted volumes, environment, and run our containerized command
+mkdir -p ~/.tank
+exec docker run \
+  --interactive --rm --network=host \
+  --user "$(id -u)" \
+  --mount type=bind,src="$(echo $HOME)/.tank",dst="/var/lib/tank" \
+  --mount type=bind,src="$(echo $HOME)/.ssh",dst="/var/lib/tank/.ssh" \
+  -t registry.gitlab.com/cyberos/infrastructure/tank:develop "$@"
+EOF2'
+sudo chmod +x /usr/local/bin/tank
+echo "Installed"
+}
+
+install_docker_wrapper
+EOF1
+}
+
+function deploy(){
+	main "init"
+	main "apply"
+	main "dependency"
+	main "provision"
+	main "config"
+}
+
+function help(){
+	echo "Usage: ..."
+	echo ""
+	echo "deploy -"
+	echo "init -"
+	echo "apply -"
+	echo "dependency -"
+	echo "provision -"
+	echo "config -"
+	echo ""
+}
+
+function main(){
+  cmd=$1
+  if [ ! -z $2 ]
+  then
+    if [ $2 = "--debug" ]
+    then
+      set -x
+			_terraform_log_level="trace"
+		else
+			set +x
+			_terraform_log_level=""
+    fi
+  fi
+  _tank_enc_salt="Zoaceewaile9xooh"
+  _tank_var_dir="/var/lib/tank"
+  _tank_install_dir="/opt/mixbytes-tank"
+  _tank_lib_dir="${_tank_install_dir}/lib"
+  _tank_state_dir="${_tank_var_dir}/.tank"
+  _tank_config_file="${_tank_state_dir}/tank.ini"
+  _tank_cache_dir="${_tank_state_dir}/cache"
+  _ansible_inventory="/usr/local/bin/terraform-inventory"
+  _ansible_playbook="${_tank_lib_dir}/tools/ansible/play.yml"
+
+	if [[ "$cmd" != "install" ]] && [[ "$cmd" != "config-create" ]] && [[ "$cmd" != "config_read" ]]; then
+		config_read
+    _terraform_vars_file="${_tank_state_dir}/${provider}.tfvars"
+		_terraform_state_dir="${_tank_state_dir}/state"
+		_terraform_state_file="${_terraform_state_dir}/terraform.tfstate"
+		_terraform_state_backup_file="${_terraform_state_dir}/terraform.tfstate.backup"
+		_terraform_backend_file="${_tank_lib_dir}/providers/${provider}/backend.tf"
+		_terraform_provider_dir="${_tank_lib_dir}/providers/${provider}"
+		export ANSIBLE_TF_DIR="${_terraform_state_dir}"
+		$cmd
+	else
+		$cmd
+	fi
+}
+
+if [ $$ -eq 1 ]; then
+	if ! whoami &> /dev/null; then
+    if [ -w /etc/passwd ]; then
+      echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${HOME}:/sbin/nologin" >> /etc/passwd
+    else
+      echo "Please docker run with --user \"\$(id -u)\""
+      exit 1
+    fi
+	fi
+fi
+
+if [ $# -eq 0 ]; then
+	help
+else
+	while (( "$#" )); do
+		if [ $1 = "--help" ]; then help; break; fi
+		if [ $# -eq 1 ]; then
+			main $1
+			break
+		elif [ $# -ge 1 ]; then
+			if [ $2 = "--debug" ]; then
+				main $1 $2
+				break
+			else
+				main $1
+				shift
+			fi
+		fi
+	done
+fi

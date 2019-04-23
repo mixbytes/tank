@@ -2,13 +2,12 @@
 
 ### Requirements
 
-- python 2.7
-- Terraform v0.11.13
+- Docker
 
 ### Install
 
 ```shell
-pip install -r requirements.txt
+docker run --rm registry.gitlab.com/cyberos/infrastructure/tank:develop install | bash
 ```
 
 ### Use
@@ -18,7 +17,8 @@ pip install -r requirements.txt
 Execute the command and answer the questions asked.
 
 ```shell
-./tank
+tank config-create
+tank deploy
 ```
 
 #### 2. Run bench
