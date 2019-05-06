@@ -1,10 +1,11 @@
 FROM ubuntu:18.04
 LABEL maintainer="alevkin@gmail.com"
-LABEL version="0.2"
+LABEL version="0.1"
 
 ARG work_dir="/opt/mixbytes-tank"
 ARG work_user="tank"
 ARG terraform_ver="0.11.13"
+ARG terraform_inventory_ver="v0.8"
 WORKDIR $work_dir
 
 RUN apt-get update -qq \
@@ -23,8 +24,8 @@ RUN apt-get update -qq \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
 
-COPY ./build/terraform.zip /tmp/terraform.zip
-COPY ./build/terraform-inventory.zip /tmp/terraform-inventory.zip
+ADD https://releases.hashicorp.com/terraform/${terraform_ver}/terraform_${terraform_ver}_linux_amd64.zip /tmp/terraform.zip
+ADD https://github.com/adammck/terraform-inventory/releases/download/${terraform_inventory_ver}/terraform-inventory_${terraform_inventory_ver}_linux_amd64.zip /tmp/terraform-inventory.zip
 RUN	cd /tmp && unzip /tmp/terraform.zip \
     && mv /tmp/terraform /usr/local/bin/ \
     && unzip /tmp/terraform-inventory.zip \

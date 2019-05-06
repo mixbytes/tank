@@ -305,7 +305,7 @@ exec docker run \
   --user "$(id -u)" \
   --mount type=bind,src="$(echo $HOME)/.tank",dst="/var/lib/tank" \
   --mount type=bind,src="$(echo $HOME)/.ssh",dst="/var/lib/tank/.ssh" \
-  -t registry.gitlab.com/cyberos/infrastructure/tank:develop "$@"
+  -t mixbytes/tank "$@"
 EOF2'
 sudo chmod +x /usr/local/bin/tank
 echo "Installed"
