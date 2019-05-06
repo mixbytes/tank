@@ -9,15 +9,17 @@ trap 'echo "Stopped"; exit 0' SIGINT SIGTERM
 # FIXME: [fixed] Cannot terminate docker container with Ctrl-C
 # FIXME: [fixed] If tank run in docker on Linux, config-create exit with error 'Permission denied'
 # TODO: [done] Encrypt passwords in config file
-# TODO: [WIP] Add Google provider
+# FIXME: [fixed] Refresh state dont't work after instance resize.
+# TODO: [done] Increase RAM for monitoring instance
+# TODO: [done] Add Google provider
 # TODO: Make async of the Ansible task 'Collect facts about all targets' (for example: http://toroid.org/ansible-parallel-dispatch)
 # TODO: Add pull to all docker containers, that come actual tag.
 # TODO: Replace pause to healthchek after start of container.
 # TODO: Add ability to switch blockchain version
 # TODO: Add ability to add additional ssh public keys to cluster
 # TODO: Add autogenerate documentation
-# TODO: If setup_id exists in config, ignore generate it.
-# TODO: Generate TF_VARs on the fly from tank.ini (remove *.tfvars configs)
+# TODO: [done] If setup_id exists in config, ignore generate it.
+# TODO: [done] Generate TF_VARs on the fly from tank.ini (remove *.tfvars configs)
 # TODO: Add option for update docker image and wrapper.
 # TODO: Add optional proxy for deploy w/o VPN when need it.
 
@@ -45,8 +47,6 @@ function _pass_dec(){
 
 function init(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
   terraform init \
   -backend-config "path=${_terraform_state_file}" \
   ${_terraform_provider_dir}
@@ -54,50 +54,33 @@ function init(){
 
 function refresh(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
   terraform refresh \
-    -var-file=${_terraform_vars_file} \
-    -state=${_terraform_state_file} \
     ${_terraform_provider_dir}
 }
 
 function plan(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
-	TF_VAR_state_path=${_terraform_state_file} \
   terraform plan \
-    -var-file=${_terraform_vars_file} \
     ${_terraform_provider_dir}
 }
 
 function state(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
   terraform state pull \
-    -var-file=${_terraform_vars_file} \
     ${_terraform_provider_dir}
 }
 
 function apply(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
-	TF_VAR_state_path=${_terraform_state_file} \
   terraform apply \
-    -var-file=${_terraform_vars_file} \
+    -parallelism=100 \
     ${_terraform_provider_dir}
 }
 
 function destroy(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
-	TF_VAR_state_path=${_terraform_state_file} \
   terraform destroy \
-    -var-file=${_terraform_vars_file} \
+    -parallelism=100 \
     ${_terraform_provider_dir}
   rm -f *.tfstate*
 }
@@ -109,17 +92,16 @@ function dependency(){
     ansible-galaxy install -f -r ${_tank_lib_dir}/tools/ansible/ansible-requirements.yml
 }
 
+# TODO: [done] Make smart switching interface by provider. eth0 - DO, ens4 - GCE
 function provision(){
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
   DO_API_TOKEN=${api_token} \
     ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
     ansible-playbook \
     -f100 -u root -i ${_ansible_inventory} \
     -e count="${bc_prod_num}" \
-    -e bc_private_interface="eth0" \
+    -e bc_private_interface="${TANK_private_interface}" \
     -e bc_docker_registry_login="${docker_registry_login}" \
     -e bc_docker_registry_url="${docker_registry_url}" \
     -e bc_docker_username="${docker_username}" \
@@ -130,8 +112,6 @@ function provision(){
 function test_run(){
 	# TODO: Add the ability to set TPS
 	cd ${_terraform_provider_dir} && \
-	TF_LOG=${_terraform_log_level} \
-	TF_DATA_DIR=${_tank_state_dir}/.terraform \
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
     ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "bench"
@@ -139,8 +119,6 @@ function test_run(){
 
 function restart(){
 	cd ${_terraform_provider_dir}
-	export TF_LOG=${_terraform_log_level}
-	export TF_DATA_DIR=${_tank_state_dir}/.terraform
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
     ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker restart cyberos-boot"
@@ -151,8 +129,6 @@ function restart(){
 
 function clean(){
 	cd ${_terraform_provider_dir}
-	export TF_LOG=${_terraform_log_level}
-	export TF_DATA_DIR=${_tank_state_dir}/.terraform
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
     ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker stop cyberos-boot"
@@ -169,35 +145,21 @@ function clean(){
 
 function config(){
 	cd ${_terraform_provider_dir}
-	export TF_LOG=${_terraform_log_level}
-	export TF_DATA_DIR=${_tank_state_dir}/.terraform
   echo "Grafana: http://$(terraform output "Monitoring instance IP address"):3000"
   echo "Prometheus: http://$(terraform output "Monitoring instance IP address"):9090"
 }
 
 function groups(){
 	cd ${_terraform_provider_dir}
-	export TF_LOG=${_terraform_log_level}
-	export TF_DATA_DIR=${_tank_state_dir}/.terraform
   DO_API_TOKEN=${api_token} ansible localhost -i ${_ansible_inventory} -m debug -a 'msg="{{ groups }}"'
 }
 
-function config_show(){
-  echo "Blockchain: ${blockchain_name}"
-  echo "Setup ID: "${setup_id}""
-  echo "Cloud Provider: ${provider}"
-  echo "API Token: ${api_token}"
-  echo "Number of Producer nodes: ${bc_prod_num}"
-  echo "Private key: "${path_pvt_key}""
-  echo "Puplic key: "${path_pub_key}""
-  if [[ "$docker_registry_login" == "true" ]]; then
-    echo "docker_registry_url: "${docker_registry_url}""
-    echo "docker_username: "${docker_username}""
-    echo "docker_password: "******""
-  fi
+function config-show(){
+  local _config=${1:-$_tank_config_file}
+  cat ${_config}
 }
 
-function config_list(){
+function config-list(){
 	ls -a -1
 }
 
@@ -206,18 +168,50 @@ function config-create(){
     echo "Config already exist."
     exit 0
   fi
+  _tmp_tank_config_file=$(mktemp)
 
-  read -p "Blockchain [cyberos]: " blockchain_name
-  blockchain_name=${blockchain_name:-cyberos}
-  read -p "Your Cloud Provider [digitalocean]: " provider
-  provider=${provider:-digitalocean}
-  read -p "API Token [${DO_API_TOKEN}]: " api_token
-  api_token=${api_token:-$DO_API_TOKEN}
-  read -p "Number of Producer nodes [${bc_prod_num}]: " bc_prod_num
-  bc_prod_num=${bc_prod_num:-$bc_prod_num}
   read -p "Path to ssh private key [~/.ssh/id_rsa]: " path_pvt_key
   path_pvt_key=${path_pvt_key:-${_tank_var_dir}/.ssh/id_rsa}
   path_pub_key="${path_pvt_key}.pub"
+  echo "path_pvt_key="${path_pvt_key}"" >> ${_tmp_tank_config_file}
+  echo "path_pub_key="${path_pub_key}"" >> ${_tmp_tank_config_file}
+
+  read -p "Your Cloud Provider [digitalocean]: " provider
+  provider=${provider:-digitalocean}
+  echo "provider=${provider}" >> ${_tmp_tank_config_file}
+
+  if [[ ${provider} == "digitalocean" ]]; then
+    read -p "API Token [${DO_API_TOKEN}]: " api_token
+    api_token=${api_token:-$DO_API_TOKEN}
+    echo "api_token=${api_token}" >> ${_tmp_tank_config_file}
+    echo "ssh_fingerprint=\"$(ssh-keygen -E md5 -lf ${path_pub_key} | awk '{print $2}' | cut -c 5-)\"" >> ${_tmp_tank_config_file}
+  elif [[ ${provider} == "gce" ]]; then
+    if [[ ! -f "${tank_var_dir}/.ssh/gce.json" ]]; then
+      echo "~/.ssh/gce.json doesn't exist"
+      read -p "GCE credentials [~/.ssh/gce.json]: " gce_cred_path
+      gce_cred_path=${gce_cred_path:-~/.ssh/gce.json}
+      echo "gce_cred_path=${gce_cred_path}" >> ${_tmp_tank_config_file}
+    else
+      gce_cred_path="~/.ssh/gce.json"
+      echo "gce_cred_path=${gce_cred_path}" >> ${_tmp_tank_config_file}
+    fi
+    read -p "GCE Project ID [ex.: my-project-191923]: " gce_project
+    gce_project=${gce_project:-undefined}
+    echo "gce_project=${gce_project}" >> ${_tmp_tank_config_file}
+  fi
+
+  read -p "Blockchain [cyberos]: " blockchain_name
+  blockchain_name=${blockchain_name:-cyberos}
+  echo "blockchain_name=${blockchain_name}" >> ${_tmp_tank_config_file}
+
+  read -p "Number of Producer nodes [2]: " bc_prod_num
+  bc_prod_num=${bc_prod_num:-2}
+  echo "bc_prod_num=${bc_prod_num}" >> ${_tmp_tank_config_file}
+
+  read -p "Number of Non-Producer (full) nodes [0]: " bc_nonprod_num
+  bc_nonprod_num=${bc_nonprod_num:-0}
+  echo "bc_nonprod_num=${bc_nonprod_num}" >> ${_tmp_tank_config_file}
+
   read -p "Docker registry private? [false]: " docker_registry_login
 	docker_registry_login=${docker_registry_login:-false}
   if [[ "$docker_registry_login" == "true" ]]; then
@@ -226,37 +220,23 @@ function config-create(){
 		read -p "Docker registry username [${docker_username}]: " docker_username
 		docker_username=${docker_username:-$docker_username}
 		read -s -p "Docker registry password: " docker_password
+    echo "docker_registry_login="${docker_registry_login}"" >> ${_tmp_tank_config_file}
+    echo "docker_registry_url="${docker_registry_url}"" >> ${_tmp_tank_config_file}
+    echo "docker_username="${docker_username}"" >> ${_tmp_tank_config_file}
+    echo "docker_password="$(_pass_enc ${docker_password} ${_tank_enc_salt})"" >> ${_tmp_tank_config_file}
   fi
 	setup_id="$(date +%s | tail -c 6)"
+  echo "setup_id="${setup_id}"" >> ${_tmp_tank_config_file}
 
   echo "\n=========== Check ======="
-  config_show
+  config-show "${_tmp_tank_config_file}"
 
   read -p "Continue? " cont
 
-  _terraform_vars_file="${_tank_state_dir}/${provider}.tfvars"
-
-  mkdir -p $_tank_state_dir
-  touch ${_tank_config_file}
-  touch ${_terraform_vars_file}
-  echo "blockchain_name=${blockchain_name}" > ${_tank_config_file}
-  echo "provider=${provider}" >> ${_tank_config_file}
-  echo "api_token=${api_token}" >> ${_tank_config_file}
-  echo "bc_prod_num=${bc_prod_num}" >> ${_tank_config_file}
-  echo "path_pvt_key="${path_pvt_key}"" >> ${_tank_config_file}
-  echo "path_pub_key="${path_pub_key}"" >> ${_tank_config_file}
-  echo "docker_registry_login="${docker_registry_login}"" >> ${_tank_config_file}
-  echo "docker_registry_url="${docker_registry_url}"" >> ${_tank_config_file}
-  echo "docker_username="${docker_username}"" >> ${_tank_config_file}
-  echo "docker_password="$(_pass_enc ${docker_password} ${_tank_enc_salt})"" >> ${_tank_config_file}
-
-  echo "do_token = \"${api_token}\"" > ${_terraform_vars_file}
-  echo "pub_key = \"${path_pub_key}\"" >> ${_terraform_vars_file}
-  echo "pvt_key = \"${path_pvt_key}\"" >> ${_terraform_vars_file}
-  echo "ssh_fingerprint = \"$(ssh-keygen -E md5 -lf ${path_pub_key} | awk '{print $2}' | cut -c 5-)\"" >> ${_terraform_vars_file}
-  echo "bc_count_prod_instances = \"${bc_prod_num}\"" >> ${_terraform_vars_file}
-  echo "setup_id = \"${setup_id}\"" >> ${_terraform_vars_file}
-  echo "blockchain_name = \"${blockchain_name}\"" >> ${_terraform_vars_file}
+  if [[ ! ${IAMINDOCKER} == "true" ]]; then
+    mkdir -p $_tank_state_dir
+  fi
+  mv $_tmp_tank_config_file $_tank_config_file
 }
 
 function install(){
@@ -362,31 +342,41 @@ function main(){
     if [ $2 = "--debug" ]
     then
       set -x
-			_terraform_log_level="trace"
+			_terraform_log_level="TRACE"
 		else
 			set +x
-			_terraform_log_level=""
+			_terraform_log_level="ERROR"
     fi
   fi
   _tank_enc_salt="Zoaceewaile9xooh"
   _tank_var_dir="/var/lib/tank"
   _tank_install_dir="/opt/mixbytes-tank"
   _tank_lib_dir="${_tank_install_dir}/lib"
-  _tank_state_dir="${_tank_var_dir}/.tank"
+  if [[ ${IAMINDOCKER} == "true" ]]; then
+    _tank_state_dir="${_tank_var_dir}"
+  else
+    _tank_state_dir="${_tank_var_dir}/.tank"
+  fi
   _tank_config_file="${_tank_state_dir}/tank.ini"
   _tank_cache_dir="${_tank_state_dir}/cache"
   _ansible_inventory="/usr/local/bin/terraform-inventory"
   _ansible_playbook="${_tank_lib_dir}/tools/ansible/play.yml"
 
-	if [[ "$cmd" != "install" ]] && [[ "$cmd" != "config-create" ]] && [[ "$cmd" != "config_read" ]]; then
+	if [[ "$cmd" != "install" ]] && [[ "$cmd" != "config-create" ]] && [[ "$cmd" != "config-show" ]]; then
 		config_read
     _terraform_vars_file="${_tank_state_dir}/${provider}.tfvars"
 		_terraform_state_dir="${_tank_state_dir}/state"
-		_terraform_state_file="${_terraform_state_dir}/terraform.tfstate"
+		_terraform_state_file="${_terraform_state_dir}/${provider}-${setup_id}.tfstate"
 		_terraform_state_backup_file="${_terraform_state_dir}/terraform.tfstate.backup"
 		_terraform_backend_file="${_tank_lib_dir}/providers/${provider}/backend.tf"
 		_terraform_provider_dir="${_tank_lib_dir}/providers/${provider}"
+    source "${_tank_lib_dir}/providers/${provider}/vars.sh"
+	  export TF_VAR_state_path=${_terraform_state_file} \
 		export ANSIBLE_TF_DIR="${_terraform_state_dir}"
+    export TF_LOG=${_terraform_log_level}
+    export TF_DATA_DIR=${_tank_state_dir}/.terraform
+    export TF_LOG_PATH=${_tank_state_dir}/.terraform/terraform.log
+    export TF_IN_AUTOMATION=true
 		$cmd
 	else
 		$cmd
@@ -394,6 +384,7 @@ function main(){
 }
 
 if [ $$ -eq 1 ]; then
+  IAMINDOCKER="true"
 	if ! whoami &> /dev/null; then
     if [ -w /etc/passwd ]; then
       echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${HOME}:/sbin/nologin" >> /etc/passwd

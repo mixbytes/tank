@@ -1,0 +1,7 @@
+export TF_VAR_pub_key="${path_pub_key}"
+export TF_VAR_pvt_key="${path_pvt_key}"
+export TF_VAR_bc_count_prod_instances="${bc_prod_num}"
+export TF_VAR_setup_id="${setup_id}"
+export TF_VAR_blockchain_name="${blockchain_name}"
+export TF_VAR_gce_project="${gce_project}"
+export TANK_private_interface="ens4"

@@ -60,7 +60,7 @@ resource "digitalocean_droplet" "tank-monitoring" {
     image = "ubuntu-18-04-x64"
     name = "tank-${var.blockchain_name}-${var.setup_id}-monitoring"
     region = "fra1"
-    size = "512mb"
+    size = "2gb"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
