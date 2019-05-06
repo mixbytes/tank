@@ -7,7 +7,7 @@
 ### Install
 
 ```shell
-docker run --rm registry.gitlab.com/cyberos/infrastructure/tank:develop install | bash
+docker run --rm mixbytes/tank install | bash
 ```
 
 ### Use
