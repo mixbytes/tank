@@ -108,6 +108,7 @@ function provision(){
     -e bc_docker_registry_url="${docker_registry_url}" \
     -e bc_docker_username="${docker_username}" \
     -e bc_docker_password="${docker_password}" \
+    -e bc_haya_logger_level="${log_level}" \
     ${_ansible_playbook}
 }
 
@@ -368,6 +369,7 @@ function main(){
   _ansible_inventory="/usr/local/bin/terraform-inventory"
   _ansible_playbook="${_tank_lib_dir}/tools/ansible/play.yml"
   tank_cl_mon="1"
+  log_level="warn"
 
 	if [[ "$cmd" != "install" ]] && [[ "$cmd" != "config-create" ]] && [[ "$cmd" != "config-show" ]]; then
 		config_read
