@@ -29,7 +29,9 @@ function config_read(){
 		exit 1
   else
     source ${_tank_config_file}
-    docker_password=$(_pass_dec "${docker_password}" "${_tank_enc_salt}")
+    if [[ $docker_password != "" ]]; then
+      docker_password=$(_pass_dec "${docker_password}" "${_tank_enc_salt}")
+    fi
   fi
 }
 
@@ -147,6 +149,10 @@ function config(){
 	cd ${_terraform_provider_dir}
   echo "Grafana: http://$(terraform output "Monitoring instance IP address"):3000"
   echo "Prometheus: http://$(terraform output "Monitoring instance IP address"):9090"
+  echo "Boot: $(terraform output "Boot node IP address")"
+  echo "Producers: $(terraform output "Producers nodes IP addresses")"
+  echo "Full nodes: $(terraform output "Full nodes IP addresses")"
+
 }
 
 function groups(){
@@ -361,6 +367,7 @@ function main(){
   _tank_cache_dir="${_tank_state_dir}/cache"
   _ansible_inventory="/usr/local/bin/terraform-inventory"
   _ansible_playbook="${_tank_lib_dir}/tools/ansible/play.yml"
+  tank_cl_mon="1"
 
 	if [[ "$cmd" != "install" ]] && [[ "$cmd" != "config-create" ]] && [[ "$cmd" != "config-show" ]]; then
 		config_read
@@ -370,8 +377,9 @@ function main(){
 		_terraform_state_backup_file="${_terraform_state_dir}/terraform.tfstate.backup"
 		_terraform_backend_file="${_tank_lib_dir}/providers/${provider}/backend.tf"
 		_terraform_provider_dir="${_tank_lib_dir}/providers/${provider}"
+    source "${_tank_lib_dir}/providers/vars.sh"
     source "${_tank_lib_dir}/providers/${provider}/vars.sh"
-	  export TF_VAR_state_path=${_terraform_state_file} \
+	  export TF_VAR_state_path=${_terraform_state_file}
 		export ANSIBLE_TF_DIR="${_terraform_state_dir}"
     export TF_LOG=${_terraform_log_level}
     export TF_DATA_DIR=${_tank_state_dir}/.terraform

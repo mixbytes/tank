@@ -9,6 +9,15 @@ variable "pvt_key" {
   description = "Path to file containing private key"
   default = "~/.ssh/id_rsa"
 }
+variable "instance_type_count" {
+  type = "map"
+  default = {
+    "boot" = "1"
+    "producer" = "1"
+    "fullnode" = "0"
+    "monitoring" = "1"
+  }
+}
 variable "gce_cred_path" {
   default = "~/.ssh/gce.json"
 }
@@ -34,6 +43,7 @@ provider "google" {
 
 resource "google_compute_instance" "tank-boot" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-boot"
+  count        = "${var.instance_type_count["boot"]}"
   machine_type = "${var.gce_machine_type}"
   zone         = "${var.gce_region_zone}"
   tags         = ["blockchain"]
@@ -56,7 +66,6 @@ resource "google_compute_instance" "tank-boot" {
     ssh-keys = "root:${file("${var.pub_key}")}"
   }
 
-  //metadata_startup_script = "echo hi > /root/hello.txt"
   provisioner "remote-exec" {
     connection {
         user = "root"
@@ -75,7 +84,7 @@ resource "google_compute_instance" "tank-producer" {
   machine_type = "${var.gce_machine_type}"
   zone         = "${var.gce_region_zone}"
   tags         = ["blockchain"]
-  count        = "${var.bc_count_prod_instances}"
+  count        = "${var.instance_type_count["producer"]}"
 
   boot_disk {
     initialize_params {
@@ -96,14 +105,51 @@ resource "google_compute_instance" "tank-producer" {
     ssh-keys = "root:${file("${var.pub_key}")}"
   }
 
-  //metadata_startup_script = "echo hi > /root/hello.txt"
-
   provisioner "remote-exec" {
     connection {
         user = "root"
         type = "ssh"
         private_key = "${file(var.pvt_key)}"
         timeout = "10m"
+    }
+    inline = [
+      "export PATH=$PATH:/usr/bin",
+    ]
+  }
+}
+
+resource "google_compute_instance" "tank-fullnode" {
+  name         = "tank-${var.blockchain_name}-${var.setup_id}-fullnode-${count.index}"
+  machine_type = "${var.gce_machine_type}"
+  zone         = "${var.gce_region_zone}"
+  tags         = ["blockchain"]
+  count        = "${var.instance_type_count["fullnode"]}"
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-minimal-1804-lts"
+    }
+  }
+
+  network_interface {
+    network = "default"
+
+    access_config {
+      nat_ip = ""
+      // Ephemeral IP
+    }
+  }
+
+  metadata {
+    ssh-keys = "root:${file("${var.pub_key}")}"
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      user = "root"
+      type = "ssh"
+      private_key = "${file(var.pvt_key)}"
+      timeout = "10m"
     }
     inline = [
       "export PATH=$PATH:/usr/bin",
@@ -130,6 +176,7 @@ resource "google_compute_firewall" "default" {
 
 resource "google_compute_instance" "monitoring" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-monitoring"
+  count        = "${var.instance_type_count["monitoring"]}"
   machine_type = "${var.gce_machine_type}"
   zone         = "${var.gce_region_zone}"
   tags         = ["monitoring"]
@@ -145,15 +192,12 @@ resource "google_compute_instance" "monitoring" {
 
     access_config {
       nat_ip = ""
-      //nat_ip = "${google_compute_instance.monitoring.network_interface.0.access_config.0.nat_ip}"
     }
   }
 
   metadata {
     ssh-keys = "root:${file("${var.pub_key}")}"
   }
-
-  //metadata_startup_script = "echo hi > /root/hello.txt"
 
   provisioner "remote-exec" {
     connection {
@@ -169,11 +213,15 @@ resource "google_compute_instance" "monitoring" {
 }
 
 output "Boot node IP address" {
-    value = "${google_compute_instance.tank-boot.network_interface.0.access_config.0.nat_ip}"
+    value = "${google_compute_instance.tank-boot.*.network_interface.0.access_config.0.nat_ip}"
 }
 
 output "Producers nodes IP addresses" {
     value = "${google_compute_instance.tank-producer.*.network_interface.0.access_config.0.nat_ip}"
+}
+
+output "Full nodes IP addresses" {
+    value = "${google_compute_instance.tank-fullnode.*.network_interface.0.access_config.0.nat_ip}"
 }
 
 output "Monitoring instance IP address" {

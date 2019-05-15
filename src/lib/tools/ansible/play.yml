@@ -43,8 +43,21 @@
     bc_haya_comp_state_prod: present
     bc_haya_comp_state_bench: present
     install_promstack: true
-    bc_haya_node_id: "{{ play_hosts.index(inventory_hostname) | int }}"
+    bc_haya_node_id: "{{ play_hosts.index(inventory_hostname) | int + 1 }}"
     bc_haya_plugin_randpa: present
+  roles:
+    - role: mixbytes.haya
+
+- name: Converge full node
+  hosts: "*full*"
+  become: true
+  vars:
+    bc_haya_comp_state_prod: present
+    bc_haya_comp_state_bench: present
+    install_promstack: true
+    bc_haya_node_id: "{{ play_hosts.index(inventory_hostname) | int + 1 }}"
+    bc_haya_plugin_randpa: present
+    bc_haya_isproduction_enabled: "false"
   roles:
     - role: mixbytes.haya
 
