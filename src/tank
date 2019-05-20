@@ -13,7 +13,7 @@ trap 'echo "Stopped"; exit 0' SIGINT SIGTERM
 # TODO: [done] Increase RAM for monitoring instance
 # TODO: [done] Add Google provider
 # TODO: Make async of the Ansible task 'Collect facts about all targets' (for example: http://toroid.org/ansible-parallel-dispatch)
-# TODO: Add pull to all docker containers, that come actual tag.
+# TODO: [Done] Add pull to all docker containers, that come actual tag.
 # TODO: Replace pause to healthchek after start of container.
 # TODO: Add ability to switch blockchain version
 # TODO: Add ability to add additional ssh public keys to cluster
@@ -68,8 +68,9 @@ function plan(){
 
 function state(){
 	cd ${_terraform_provider_dir} && \
-  terraform state pull \
-    ${_terraform_provider_dir}
+  terraform state list \
+    -state="${_terraform_state_file}" | grep -v "terraform"
+#    ${_terraform_provider_dir}
 }
 
 function apply(){
