@@ -29,3 +29,23 @@ dist: clean
 
 dist-upload:
 	twine upload dist/*
+
+docker-dev: getdeps
+	@echo "Build docker image...  "
+	@docker build -f Dockerfile.dev -t mixbytes/tank:develop .
+	@echo "OK"
+
+push-dev: docker-dev
+	@echo "Push docker image to registry...  "
+	@docker push mixbytes/tank:develop
+	@echo "OK"
+
+docker:
+	@echo "Build docker image w/o cache...  "
+	@docker build --no-cache -t mixbytes/tank .
+	@echo "OK"
+
+push: docker
+	@echo "Push docker image to registry...  "
+	@docker push mixbytes/tank
+	@echo "OK"

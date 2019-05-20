@@ -1,69 +1,28 @@
-# Bench toolkit for blockchain
+# MixBytes Tank
 
-## Installation
+### Requirements
 
-```
-$ pip install -r requirements.txt
+- Docker
 
-$ pip install setup.py
-```
+### Install
 
-## Development
-
-This project includes a number of helpers in the `Makefile` to streamline common development tasks.
-
-### Environment Setup
-
-The following demonstrates setting up and working with a development environment:
-
-```
-### create a virtualenv for development
-
-$ make virtualenv
-
-$ source env/bin/activate
-
-
-### run tank cli application
-
-$ tank --help
-
-
-### run pytest / coverage
-
-$ make test
+```shell
+docker run --rm mixbytes/tank install | bash
 ```
 
+### Use
 
-### Releasing to PyPi
+#### 1. Create cluster and provision with default blockchain
 
-Before releasing to PyPi, you must configure your login credentials:
+Execute the command and answer the questions asked.
 
-**~/.pypirc**:
-
-```
-[pypi]
-username = YOUR_USERNAME
-password = YOUR_PASSWORD
+```shell
+tank config-create
+tank deploy
 ```
 
-Then use the included helper function via the `Makefile`:
+#### 2. Run bench
 
-```
-$ make dist
-
-$ make dist-upload
-```
-
-## Deployments
-
-### Docker
-
-Included is a basic `Dockerfile` for building and distributing `MixBytes Tank`,
-and can be built with the included `make` helper:
-
-```
-$ make docker
-
-$ docker run -it tank --help
+```shell
+tank test_run
 ```
