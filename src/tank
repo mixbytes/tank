@@ -101,7 +101,6 @@ function provision(){
   if [ ! -z $1 ]; then
     tags="-t $1"
   fi
-  set -x
 	cd ${_terraform_provider_dir} && \
   DO_API_TOKEN=${api_token} \
     ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
