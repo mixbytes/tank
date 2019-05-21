@@ -21,7 +21,7 @@ provider "digitalocean" {
 }
 
 resource "digitalocean_droplet" "tank-boot" {
-    image = "ubuntu-18-04-x64"
+    image = "docker-18-04"
     name = "tank-${var.blockchain_name}-${var.setup_id}-boot"
     count = "${var.instance_type_count["boot"]}"
     region = "fra1"
@@ -44,7 +44,7 @@ resource "digitalocean_droplet" "tank-boot" {
 }
 
 resource "digitalocean_droplet" "tank-producer" {
-    image = "ubuntu-18-04-x64"
+    image = "docker-18-04"
     name = "tank-${var.blockchain_name}-${var.setup_id}-producer-${count.index}"
     count = "${var.instance_type_count["producer"]}"
     region = "fra1"
@@ -67,7 +67,7 @@ resource "digitalocean_droplet" "tank-producer" {
 }
 
 resource "digitalocean_droplet" "tank-fullnode" {
-  image = "ubuntu-18-04-x64"
+  image = "docker-18-04"
   name = "tank-${var.blockchain_name}-${var.setup_id}-fullnode-${count.index}"
   count = "${var.instance_type_count["fullnode"]}"
   region = "fra1"
@@ -90,7 +90,7 @@ resource "digitalocean_droplet" "tank-fullnode" {
 }
 
 resource "digitalocean_droplet" "tank-monitoring" {
-    image = "ubuntu-18-04-x64"
+    image = "docker-18-04"
     name = "tank-${var.blockchain_name}-${var.setup_id}-monitoring"
     count = "${var.instance_type_count["monitoring"]}"
     region = "fra1"

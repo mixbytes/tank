@@ -76,6 +76,7 @@ function state(){
 function apply(){
 	cd ${_terraform_provider_dir} && \
   terraform apply \
+    -auto-approve \
     -parallelism=100 \
     ${_terraform_provider_dir}
 }
@@ -97,6 +98,10 @@ function dependency(){
 
 # TODO: [done] Make smart switching interface by provider. eth0 - DO, ens4 - GCE
 function provision(){
+  if [ ! -z $1 ]; then
+    tags="-t $1"
+  fi
+  set -x
 	cd ${_terraform_provider_dir} && \
   DO_API_TOKEN=${api_token} \
     ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
@@ -110,6 +115,7 @@ function provision(){
     -e bc_docker_username="${docker_username}" \
     -e bc_docker_password="${docker_password}" \
     -e bc_haya_logger_level="${log_level}" \
+    ${tags} \
     ${_ansible_playbook}
 }
 
@@ -135,16 +141,16 @@ function clean(){
 	cd ${_terraform_provider_dir}
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker stop cyberos-boot"
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker stop haya-boot"
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "rm -rf /opt/cyberos/boot/state/"
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "rm -rf /opt/haya/boot/state/"
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "docker stop cyberos-prod"
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "docker stop haya-prod"
   ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "rm -rf /opt/cyberos/prod/state/"
+    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "rm -rf /opt/haya/prod/state/"
 }
 
 function config(){
@@ -344,7 +350,7 @@ function help(){
 }
 
 function main(){
-  cmd=$1
+  cmd=$@
   if [ ! -z $2 ]
   then
     if [ $2 = "--debug" ]
@@ -418,6 +424,9 @@ else
 			if [ $2 = "--debug" ]; then
 				main $1 $2
 				break
+      elif [ $1 = "provision" ]; then
+        main $1 $2
+        break
 			else
 				main $1
 				shift

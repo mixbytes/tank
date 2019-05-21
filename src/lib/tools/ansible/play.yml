@@ -1,27 +1,52 @@
 ---
-- name: Prepare 1
+- name: Collect facts
   hosts: all
-  strategy: free
   become: true
-  gather_facts: false
+  gather_facts: no
   tasks:
-    - name: Install python2 for Ansible
-      raw: bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qqy python-minimal)"
-      register: output
-      changed_when:
-        - output.stdout != ""
-        - output.stdout != "\r\n"
     - name: Gathering Facts
       setup:
 
-- name: Prepare 2
-  hosts: all
-  strategy: free
+- name: Create groups
+  hosts: localhost
+  gather_facts: false
+  vars:
+    bc_private_interface: enp0s8
+  tasks:
+    - name: "Add boot node to group bcboot"
+      add_host:
+        name: "{{ item }}"
+        groups: bcboot
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"boot" in hostvars[item]["ansible_hostname"]'
+    - name: "Add all nodes to group bcpeers"
+      add_host:
+        name: "{{ item }}"
+        groups: bcpeers
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"]'
+    - name: "Add monitnoring nodes to group monitoring_peer"
+      register: _create_group_monitoring
+      add_host:
+        name: "{{ item }}"
+        groups: monitoring_peer
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"monitoring" in hostvars[item]["ansible_hostname"]'
+
+- name: "Setup firewall"
+  hosts: "all"
   become: true
-  gather_facts: true
-  roles:
-    - role: geerlingguy.docker
-    - role: azavea.ansible-pip
+  tasks:
+    - name: "Allow internal traffic"
+      ufw:
+        rule: allow
+        src: "{{ item }}"
+      loop: "{{ groups['all'] | map('extract', hostvars, ['ansible_'+bc_private_interface, 'ipv4', 'address']) | list }}"
+      tags:
+        - firewall
 
 - name: Converge boot node
   hosts: "*boot*"
@@ -71,3 +96,10 @@
     admin_password: tank
   roles:
     - role: mixbytes.haya
+  tasks:
+    - name: Open grafana tcp port
+      ufw:
+        rule: allow
+        port: 3000
+      tags:
+        - firewall
