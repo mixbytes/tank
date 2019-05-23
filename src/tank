@@ -90,10 +90,12 @@ function destroy(){
 }
 
 function dependency(){
-	cd ${_terraform_provider_dir} && \
-  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
-    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible-galaxy install -f -r ${_tank_lib_dir}/tools/ansible/ansible-requirements.yml
+  _tmp_tank_dependency_file=$(mktemp --suffix=.yml)
+  export ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles
+  export ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg
+  ansible-galaxy install -f -r ${_tank_lib_dir}/tools/ansible/ansible-requirements.yml
+  cat ${_tank_lib_dir}/tools/ansible/ansible-blockchain.yml.mo | mo > ${_tmp_tank_dependency_file}
+  ansible-galaxy install -f -r ${_tmp_tank_dependency_file}
 }
 
 # TODO: [done] Make smart switching interface by provider. eth0 - DO, ens4 - GCE
@@ -106,7 +108,7 @@ function provision(){
     ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
     ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
     ansible-playbook \
-    -f100 -u root -i ${_ansible_inventory} \
+    -f10 -u root -i ${_ansible_inventory} \
     -e count="${bc_prod_num}" \
     -e bc_private_interface="${TANK_private_interface}" \
     -e bc_docker_registry_login="${docker_registry_login}" \
@@ -114,6 +116,8 @@ function provision(){
     -e bc_docker_username="${docker_username}" \
     -e bc_docker_password="${docker_password}" \
     -e bc_haya_logger_level="${log_level}" \
+    -e bc_haya_image="${haya_image}" \
+    -e blockchain_name="${blockchain_name}" \
     ${tags} \
     ${_ansible_playbook}
 }
@@ -137,19 +141,14 @@ function restart(){
 }
 
 function clean(){
+  _ansible_cmd="ansible -f 10 -B 3600 -P 10 -u root -i ${_ansible_inventory} "
 	cd ${_terraform_provider_dir}
-  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
-    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "docker stop haya-boot"
-  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
-    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*boot*" -a "rm -rf /opt/haya/boot/state/"
-  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
-    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "docker stop haya-prod"
-  ANSIBLE_ROLES_PATH=${_tank_state_dir}/roles \
-    ANSIBLE_CONFIG=${_tank_lib_dir}/tools/ansible/ansible.cfg \
-    ansible -f 100 -B 3600 -P 10 -u root -i ${_ansible_inventory} "*producer*" -a "rm -rf /opt/haya/prod/state/"
+    $_ansible_cmd "*boot*" -a "docker stop ${blockchain_name}-boot"
+    $_ansible_cmd "*producer*" -a "docker stop ${blockchain_name}-prod"
+    $_ansible_cmd "*full*" -a "docker stop ${blockchain_name}-prod"
+    $_ansible_cmd "*boot*" -a "rm -rf /opt/${blockchain_name}/boot/state/"
+    $_ansible_cmd "*producer*" -a "rm -rf /opt/${blockchain_name}/prod/state/"
+    $_ansible_cmd "*full*" -a "rm -rf /opt/${blockchain_name}/prod/state/"
 }
 
 function config(){
@@ -365,6 +364,8 @@ function main(){
   _tank_var_dir="/var/lib/tank"
   _tank_install_dir="/opt/mixbytes-tank"
   _tank_lib_dir="${_tank_install_dir}/lib"
+  source ${_tank_lib_dir}/mo
+
   if [[ ${IAMINDOCKER} == "true" ]]; then
     _tank_state_dir="${_tank_var_dir}"
   else
@@ -376,6 +377,8 @@ function main(){
   _ansible_playbook="${_tank_lib_dir}/tools/ansible/play.yml"
   tank_cl_mon="1"
   log_level="warn"
+  haya_image="mixbytes/haya"
+  bc_nonprod_num=0
 
 	if [[ "$cmd" != "install" ]] && [[ "$cmd" != "config-create" ]] && [[ "$cmd" != "config-show" ]]; then
 		config_read
@@ -389,6 +392,8 @@ function main(){
     source "${_tank_lib_dir}/providers/${provider}/vars.sh"
 	  export TF_VAR_state_path=${_terraform_state_file}
 		export ANSIBLE_TF_DIR="${_terraform_state_dir}"
+    export ANSIBLE_ROLES_PATH="${_tank_state_dir}/roles"
+    export ANSIBLE_CONFIG="${_tank_lib_dir}/tools/ansible/ansible.cfg"
     export TF_LOG=${_terraform_log_level}
     export TF_DATA_DIR=${_tank_state_dir}/.terraform
     export TF_LOG_PATH=${_tank_state_dir}/.terraform/terraform.log

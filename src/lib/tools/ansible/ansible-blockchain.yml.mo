@@ -1,0 +1,3 @@
+- src: {{ blockchain_ansible_repo }}
+  version: {{ blockchain_ansible_repo_version }}
+  name: tank.blockchain

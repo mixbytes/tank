@@ -1,7 +1,6 @@
-
-- src: https://github.com/mixbytes/tank.ansible-haya
-  version: alevkin
-  name: mixbytes.haya
+- src: https://github.com/geerlingguy/ansible-role-docker
+  version: master
+  name: tank.docker
 
 - src: https://github.com/mixbytes/tank.ansible-promstack
   version: master
