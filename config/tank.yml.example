@@ -6,6 +6,9 @@ tank:
 ### State file
 # state_file: ~/.tank/tank.json
 
+### Cloud Provider
+#	provider: undefined
+
 ### Toggle application level debug (does not toggle framework debugging)
 # debug: false
 

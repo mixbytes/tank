@@ -1,5 +1,5 @@
 
-import os, sh
+import os
 from tinydb import TinyDB
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
@@ -10,11 +10,13 @@ from cement.utils import fs
 import pkg_resources
 
 # configuration defaults
-CONFIG = init_defaults('tank', 'log.logging')
+CONFIG = init_defaults('tank',
+                       'digitalocean',
+                       'log.logging')
 CONFIG['tank']['state_file'] = '~/.tank/tank.json'
-CONFIG['tank']['provider'] = 'gce'
+CONFIG['tank']['provider'] = 'digitalocean'
+CONFIG['digitalocean']['private_interface'] = 'eth0'
 CONFIG['log.logging']['level'] = 'info'
-CONFIG['provider'] = 'gce'
 
 
 def extend_tinydb(app):
@@ -25,6 +27,7 @@ def extend_tinydb(app):
         os.makedirs(state_dir)
 
     app.extend('state', TinyDB(state_file))
+
 
 class MixbytesTank(App):
     """MixBytes Tank primary application."""
@@ -71,23 +74,35 @@ class MixbytesTank(App):
             ('post_setup', extend_tinydb),
         ]
 
-        app_work_dir = fs.abspath('.')
-        provider = "digitalocean"
+    def setup(self):
+        super(MixbytesTank, self).setup()
+        self.work_dir = fs.abspath('.')
+        self.state_dir = self.work_dir + '/.tank/state/'
+        self.log_dir = self.work_dir + '/.tank/log/'
+        self.provider = self.config.get(self.Meta.label, "provider")
+        self.root_dir = pkg_resources.resource_filename(
+             self.Meta.label, '/')
+        self.terraform_plan_dir = pkg_resources.resource_filename(
+             self.Meta.label, 'providers' + "/" + self.provider)
+        self.terraform_log_path = self.log_dir + 'terraform.log'
 
-        terraform_plan_dir = pkg_resources.resource_filename(
-            label, 'providers' + "/"
-                       + provider)
-        app_state_dir = app_work_dir + "/"+label+"./state/"
-        app_log_dir = app_work_dir + "/."+label+"/log/"
-        terraform_log_path = app_log_dir + 'terraform.log'
+        fs.ensure_dir_exists(self.state_dir)
+        fs.ensure_dir_exists(self.log_dir)
+        self.terraform_state_file = self.state_dir+"/dev-do-00001.tfstate"
+        self.app_env = os.environ.copy()
+        self.app_env["TF_LOG"] = "TRACE"
+        self.app_env["TF_LOG_PATH"] = self.terraform_log_path
+        self.app_env["TF_DATA_DIR"] = self.state_dir
+        self.app_env["TF_IN_AUTOMATION"] = "true"
+        self.app_env["TF_VAR_state_path"] = self.terraform_state_file
+        for common_key in self.config.keys(self.Meta.label):
+            self.app_env["TF_VAR_"+common_key] = self.config.get(self.Meta.label, common_key)
+        for provider_key in self.config.keys(self.provider):
+            self.app_env["TF_VAR_"+provider_key] = self.config.get(self.provider, provider_key)
 
-        fs.ensure_dir_exists(app_state_dir)
-        fs.ensure_dir_exists(app_log_dir)
-        terraform_state_file = app_state_dir+"/dev-do-00001.tfstate"
-        app_env = os.environ.copy()
-        app_env["TF_LOG"] = "TRACE"
-        app_env["TF_LOG_PATH"] = terraform_log_path
-        app_env["TF_VAR_state_path"] = terraform_state_file
+        # print(self.app_env)
+        # print(self.app_env["TF_VAR_setup_id"])
+        # print(self.app_env["TF_VAR_state_path"])
 
 class MixbytesTankTest(TestApp, MixbytesTank):
     """A sub-class of MixbytesTank that is better suited for testing."""
@@ -99,15 +114,8 @@ class MixbytesTankTest(TestApp, MixbytesTank):
 def main():
     with MixbytesTank() as app:
         try:
-            # tank_root_dir = pkg_resources.resource_filename(
-            #     self.app.label, '/')
-            # terr_plan_dir = pkg_resources.resource_filename(
-            #    app.label, 'providers' + "/"
-            #    + app.config(app.label, 'provider'))
-            # tank_work_dir = fs.abspath('.')
-
-            print(app.plugins.list)
-            #app.run()
+            # print(app.hook.list())
+            app.run()
 
         except AssertionError as e:
             print('AssertionError > %s' % e.args[0])

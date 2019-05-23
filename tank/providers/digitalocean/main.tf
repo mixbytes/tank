@@ -1,4 +1,4 @@
-variable "do_token" {}
+variable "token" {}
 variable "pub_key" {}
 variable "pvt_key" {}
 variable "ssh_fingerprint" {}
@@ -8,7 +8,7 @@ variable "blockchain_name" {}
 
 provider "digitalocean" {
   version = "~> 1.1"
-  token = "${var.do_token}"
+  token = "${var.token}"
 }
 
 resource "digitalocean_droplet" "tank-boot" {

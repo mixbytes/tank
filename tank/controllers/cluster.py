@@ -1,20 +1,13 @@
 
 from cement import Controller, ex
-from cement.utils import fs
+# from cement.utils import fs
 import sh
-import os
-import pkg_resources
+from io import StringIO
+# import os
+# import pkg_resources
+
 
 class Cluster(Controller):
-    # tank_provider = self.app.config.get(self.app.label, 'provider')
-    # terr_plan_dir = pkg_resources.resource_filename(
-    #     self.app.label, 'providers' + "/" + tank_provider)
-
-    # tank_work_dir=os.path.dirname(os.path.realpath(__file__))
-
-    # terr_state_dir = fs.abspath(fs.ensure_dir_exists('./.tank/state'))
-    # terr_state_file=terr_state_dir+"/dev-do-00001.tfstate"
-    # terr_plan_dir=tank_work_dir+"/lib/providers/digitalocean/"
 
     class Meta:
         label = 'cluster'
@@ -25,50 +18,64 @@ class Cluster(Controller):
         description = 'Manipulating of cluster'
 
         # text displayed at the bottom of --help output
-        epilog = ''
+        title = 'Low level cluster management commands'
+        help = 'Low level cluster management commands'
 
+    def process_output(line, stdin, process):
+        print(line)
 
-    @ex(help='init')
+    def approve_destroy(self, line, stdin):
+        line = line.strip()
+        print(line)
+        if line.endswith("Enter a value:"):
+            stdin.put("correcthorsebatterystaple")
+
+    @ex(help='Download plugins, modules for Terraform', hide=True)
     def init(self):
-        # tank_provider = self.app.config.get(self.app.label, 'provider')
-        ## tank_root_dir = pkg_resources.resource_filename(
-        ##     self.app.label, '/')
-        # terr_plan_dir = pkg_resources.resource_filename(
-        #     self.app.label, 'providers' + "/" + tank_provider)
-        # tank_work_dir = fs.abspath('.')
-        # tank_state_dir = tank_work_dir + '/.tank/state/'
-        # tank_log_dir = tank_work_dir + '/.tank/log/'
-        # terr_log_path = tank_log_dir + 'terraform.log'
+        sh.terraform(
+            "init",
+            self.app.terraform_plan_dir,
+            _cwd=self.app.terraform_plan_dir,
+            _env=self.app.app_env,
+            _out=self.app.terraform_log_path
+        )
+        print("OK")
 
-        # fs.ensure_dir_exists(tank_state_dir)
-        # fs.ensure_dir_exists(tank_log_dir)
-        # terr_state_file = tank_state_dir+"/dev-do-00001.tfstate"
-
-        # tank_env = os.environ.copy()
-        # tank_env["TF_LOG"] = "TRACE"
-        # tank_env["TF_LOG_PATH"] = terr_log_path
-        # tank_env["TF_VAR_state_path"] = terr_state_file
-
-        print(sh.terraform(
-            "init", self.app.Meta.terraform_plan_dir,
-            _cwd=self.app.Meta.terraform_plan_dir, _env=self.app.Meta.app_env))
-
-    @ex(help='plan')
+    @ex(help='Generate and show an execution plan by Terraform', hide=True)
     def plan(self):
-        pass
+        sh.terraform(
+            "plan", "-input=false", self.app.terraform_plan_dir,
+            _cwd=self.app.terraform_plan_dir,
+            _env=self.app.app_env,
+            _out=self.app.terraform_log_path
+        )
 
-    @ex(help='create')
+    @ex(help='Create instances for cluster')
     def create(self):
-        pass
+        sh.terraform(
+            "apply", "-auto-approve",
+            "-parallelism=100",
+            self.app.terraform_plan_dir,
+            _cwd=self.app.terraform_plan_dir,
+            _env=self.app.app_env,
+            _out=self.app.terraform_log_path
+        )
 
-    @ex(help='dependency')
+    @ex(help='Install Ansible roles from Galaxy or SCM')
     def dependency(self):
         pass
 
-    @ex(help='provision')
+    @ex(help='Setup instances: configs, packages, services, etc')
     def provision(self):
         pass
 
-    @ex(help='destroy')
+    @ex(help='Destroy all instances')
     def destroy(self):
-        pass
+        sh.terraform(
+            "destroy", "-auto-approve",
+            "-parallelism=100",
+            self.app.terraform_plan_dir,
+            _cwd=self.app.terraform_plan_dir,
+            _env=self.app.app_env,
+            _out=self.app.terraform_log_path
+        )
