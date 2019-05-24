@@ -30,6 +30,9 @@ dist: clean
 dist-upload:
 	twine upload dist/*
 
+test-dist-upload:
+	twine upload -r test dist/*
+
 docker-dev: getdeps
 	@echo "Build docker image...  "
 	@docker build -f Dockerfile.dev -t mixbytes/tank:develop .
