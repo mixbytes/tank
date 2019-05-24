@@ -20,11 +20,12 @@ jobs:
     - stage: deploy_test
       deploy:
         provider: pypi
+        skip_existing: true
         user: "alevkin"
         password:
           secure: "Mq/CJ5rKHsaGh1zy3USQo2Xg4WqRSCEo57hCOFW0ZGGe7OOiOTRLWKH+vhtRn/SNCIrOEDdvJ1Pqgbq7I5Do8FtJ/Gg5X6+8y386LASFbg/dV1Li8YYv112UIQATaWBe3vPKuzFaKsgnAZzakZQiR2ZcQ9Nf/YA5WvCR/sUiGUtJO8Pbs/NFtAYdUo7NkYVDvfJ4mK4EjQl3njdmNS3TBKEwea+obctlKOkyzIdNUU6h6/lffnOWmI5d5GwGNXJAHBtRg21dyp2MM2bxdBcTvl7Lq5rNoz0TYJZlpcUMT2E66hgJCt+0t12QK3WwvJl0FZAUhZ+sCegftBk1RGof9ZZ6TZZw2WRbhMs3nD842u0MjpugsERX7eo+yYqkhUiM+Pw3e+K4g13io2Poyx/HeTM7ifsFxxXul0E/q/jCFokIiKADmDK+BDoVoBOgGFaWVBUq37INPDcGC3uyOzfyCtqyQfYCO11EOeoGUNYXz8sLW+afjaIU3PQihRCszm/CROpRcNZ2t/eUqJG3r+j6+NcS0Xg4fXXB4khtX2wofKBcTLdr2N+Iefbmyjzzb9WrO3x6S6DurO5oWBwOwcfww928+h9PX9PLokcX8GMKQAtKde7abm56csxr0HnEhY3kh8TcjnGKZwXOOjW+5d0gjN4t4v8ERMktKGJA2oNPQ/g="
         on:
-          tags: true
+          all_branches: true
     - stage: deploy_release
       deploy:
         provider: pypi
@@ -33,6 +34,6 @@ jobs:
         password:
           secure: "Mq/CJ5rKHsaGh1zy3USQo2Xg4WqRSCEo57hCOFW0ZGGe7OOiOTRLWKH+vhtRn/SNCIrOEDdvJ1Pqgbq7I5Do8FtJ/Gg5X6+8y386LASFbg/dV1Li8YYv112UIQATaWBe3vPKuzFaKsgnAZzakZQiR2ZcQ9Nf/YA5WvCR/sUiGUtJO8Pbs/NFtAYdUo7NkYVDvfJ4mK4EjQl3njdmNS3TBKEwea+obctlKOkyzIdNUU6h6/lffnOWmI5d5GwGNXJAHBtRg21dyp2MM2bxdBcTvl7Lq5rNoz0TYJZlpcUMT2E66hgJCt+0t12QK3WwvJl0FZAUhZ+sCegftBk1RGof9ZZ6TZZw2WRbhMs3nD842u0MjpugsERX7eo+yYqkhUiM+Pw3e+K4g13io2Poyx/HeTM7ifsFxxXul0E/q/jCFokIiKADmDK+BDoVoBOgGFaWVBUq37INPDcGC3uyOzfyCtqyQfYCO11EOeoGUNYXz8sLW+afjaIU3PQihRCszm/CROpRcNZ2t/eUqJG3r+j6+NcS0Xg4fXXB4khtX2wofKBcTLdr2N+Iefbmyjzzb9WrO3x6S6DurO5oWBwOwcfww928+h9PX9PLokcX8GMKQAtKde7abm56csxr0HnEhY3kh8TcjnGKZwXOOjW+5d0gjN4t4v8ERMktKGJA2oNPQ/g="
         on:
-          all_branches: true
+          tags: true
 script:
   - echo 'OK'
