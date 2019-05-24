@@ -1,4 +1,3 @@
-
 import os
 from tinydb import TinyDB
 from cement import App, TestApp, init_defaults
@@ -83,14 +82,14 @@ class MixbytesTank(App):
         self.log_dir = self.work_dir + '/.tank/log/'
         self.provider = self.config.get(self.Meta.label, "provider")
         self.root_dir = pkg_resources.resource_filename(
-             self.Meta.label, '/')
-        self.terraform_plan_dir = self.root_dir + "/" +\
-                                  'providers' + "/" + self.provider
+            self.Meta.label, '/')
+        self.terraform_plan_dir = self.root_dir + \
+            "/providers/" + self.provider
         self.terraform_log_path = self.log_dir + 'terraform.log'
 
         fs.ensure_dir_exists(self.state_dir)
         fs.ensure_dir_exists(self.log_dir)
-        self.terraform_state_file = self.state_dir+"/dev-do-00001.tfstate"
+        self.terraform_state_file = self.state_dir + "/dev-do-00001.tfstate"
         self.app_env = os.environ.copy()
         self.app_env["TF_LOG"] = "TRACE"
         self.app_env["TF_LOG_PATH"] = self.terraform_log_path
@@ -98,15 +97,16 @@ class MixbytesTank(App):
         self.app_env["TF_IN_AUTOMATION"] = "true"
         self.app_env["TF_VAR_state_path"] = self.terraform_state_file
         for common_key in self.config.keys(self.Meta.label):
-            self.app_env["TF_VAR_"+common_key] = self.config.get(self.Meta.label, common_key)
+            self.app_env["TF_VAR_" + common_key] = \
+                self.config.get(self.Meta.label, common_key)
         for provider_key in self.config.keys(self.provider):
-            self.app_env["TF_VAR_"+provider_key] = self.config.get(self.provider, provider_key)
-        self.app_env["ANSIBLE_ROLES_PATH"] = self.state_dir+"/roles"
-        self.app_env["ANSIBLE_CONFIG"] = self.root_dir+"/tools/ansible/ansible.cfg"
+            self.app_env["TF_VAR_" + provider_key] = \
+                self.config.get(self.provider, provider_key)
+        self.app_env["ANSIBLE_ROLES_PATH"] = \
+            self.state_dir + "/roles"
+        self.app_env["ANSIBLE_CONFIG"] = \
+            self.root_dir + "/tools/ansible/ansible.cfg"
 
-        # print(self.app_env)
-        # print(self.app_env["TF_VAR_setup_id"])
-        # print(self.app_env["TF_VAR_state_path"])
 
 class MixbytesTankTest(TestApp, MixbytesTank):
     """A sub-class of MixbytesTank that is better suited for testing."""

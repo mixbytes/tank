@@ -2,6 +2,7 @@
 from cement import Controller, ex
 import sh
 
+
 class Cluster(Controller):
 
     class Meta:
@@ -62,12 +63,17 @@ class Cluster(Controller):
     @ex(help='Install Ansible roles from Galaxy or SCM')
     def dependency(self):
         self.data = {
-            'blockchain_ansible_repo': self.app.config.get(self.app.label, 'blockchain_ansible_repo'),
-            'blockchain_ansible_repo_version': self.app.config.get(self.app.label, 'blockchain_ansible_repo_version')
+            'blockchain_ansible_repo': self.app.config.get(
+                self.app.label, 'blockchain_ansible_repo'),
+            'blockchain_ansible_repo_version': self.app.config.get(
+                self.app.label, 'blockchain_ansible_repo_version')
         }
         self.ansible_req_src = self.app.root_dir+"templates"
         self.ansible_req_dst = self.app.state_dir+"/roles"
-        self.app.template.copy(self.ansible_req_src, self.ansible_req_dst, self.data, force=True)
+        self.app.template.copy(
+            self.ansible_req_src,
+            self.ansible_req_dst,
+            self.data, force=True)
         cmd = sh.Command("ansible-galaxy")
         p = cmd(
                 "install", "-f", "-r",
@@ -88,7 +94,8 @@ class Cluster(Controller):
     def provision(self):
         cmd = sh.Command("ansible-playbook")
         p = cmd(
-                "-f", "10", "-u", "root", "-i", "/usr/local/bin/terraform-inventory",
+                "-f", "10", "-u", "root", "-i",
+                "/usr/local/bin/terraform-inventory",
                 "--extra-vars='one=two'", "--private-key=~/.ssh/id_rsa",
                 self.app.root_dir+"/tools/ansible/play.yml",
                 _cwd=self.app.terraform_plan_dir,
