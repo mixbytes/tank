@@ -1,11 +1,6 @@
 
 from cement import Controller, ex
-# from cement.utils import fs
 import sh
-from io import StringIO
-# import os
-# import pkg_resources
-
 
 class Cluster(Controller):
 
@@ -21,8 +16,8 @@ class Cluster(Controller):
         title = 'Low level cluster management commands'
         help = 'Low level cluster management commands'
 
-    def process_output(line, stdin, process):
-        print(line)
+    def process_output(self, line):
+        print(line, end='', flush=True)
 
     def approve_destroy(self, line, stdin):
         line = line.strip()
@@ -32,50 +27,84 @@ class Cluster(Controller):
 
     @ex(help='Download plugins, modules for Terraform', hide=True)
     def init(self):
-        sh.terraform(
-            "init",
+        cmd = sh.Command("terraform")
+        p = cmd(
+            "init", "-backend-config", "path="+self.app.terraform_state_file,
             self.app.terraform_plan_dir,
-            _cwd=self.app.terraform_plan_dir,
             _env=self.app.app_env,
-            _out=self.app.terraform_log_path
-        )
-        print("OK")
+            _out=self.process_output,
+            _bg=True)
+        p.wait()
 
     @ex(help='Generate and show an execution plan by Terraform', hide=True)
     def plan(self):
-        sh.terraform(
+        cmd = sh.Command("terraform")
+        p = cmd(
             "plan", "-input=false", self.app.terraform_plan_dir,
-            _cwd=self.app.terraform_plan_dir,
             _env=self.app.app_env,
-            _out=self.app.terraform_log_path
-        )
+            _out=self.process_output,
+            _bg=True)
+        p.wait()
 
     @ex(help='Create instances for cluster')
     def create(self):
-        sh.terraform(
-            "apply", "-auto-approve",
-            "-parallelism=100",
-            self.app.terraform_plan_dir,
-            _cwd=self.app.terraform_plan_dir,
-            _env=self.app.app_env,
-            _out=self.app.terraform_log_path
-        )
+        cmd = sh.Command("terraform")
+        p = cmd(
+                "apply", "-auto-approve",
+                "-parallelism=100",
+                self.app.terraform_plan_dir,
+                _env=self.app.app_env,
+                _out=self.process_output,
+                _bg=True
+                )
+        p.wait()
 
     @ex(help='Install Ansible roles from Galaxy or SCM')
     def dependency(self):
-        pass
+        self.data = {
+            'blockchain_ansible_repo': self.app.config.get(self.app.label, 'blockchain_ansible_repo'),
+            'blockchain_ansible_repo_version': self.app.config.get(self.app.label, 'blockchain_ansible_repo_version')
+        }
+        self.ansible_req_src = self.app.root_dir+"templates"
+        self.ansible_req_dst = self.app.state_dir+"/roles"
+        self.app.template.copy(self.ansible_req_src, self.ansible_req_dst, self.data, force=True)
+        cmd = sh.Command("ansible-galaxy")
+        p = cmd(
+                "install", "-f", "-r",
+                self.app.root_dir+"/tools/ansible/ansible-requirements.yml",
+                _env=self.app.app_env,
+                _out=self.process_output,
+                _bg=True)
+        p.wait()
+        p = cmd(
+                "install", "-f", "-r",
+                self.app.state_dir+"/roles/requirements.yml",
+                _env=self.app.app_env,
+                _out=self.process_output,
+                _bg=True)
+        p.wait()
 
     @ex(help='Setup instances: configs, packages, services, etc')
     def provision(self):
-        pass
+        cmd = sh.Command("ansible-playbook")
+        p = cmd(
+                "-f", "10", "-u", "root", "-i", "/usr/local/bin/terraform-inventory",
+                "--extra-vars='one=two'", "--private-key=~/.ssh/id_rsa",
+                self.app.root_dir+"/tools/ansible/play.yml",
+                _cwd=self.app.terraform_plan_dir,
+                _env=self.app.app_env,
+                _out=self.process_output,
+                _bg=True)
+        p.wait()
 
     @ex(help='Destroy all instances')
     def destroy(self):
-        sh.terraform(
-            "destroy", "-auto-approve",
-            "-parallelism=100",
-            self.app.terraform_plan_dir,
-            _cwd=self.app.terraform_plan_dir,
-            _env=self.app.app_env,
-            _out=self.app.terraform_log_path
-        )
+        cmd = sh.Command("terraform")
+        p = cmd(
+                "destroy", "-auto-approve",
+                "-parallelism=100",
+                self.app.terraform_plan_dir,
+                _env=self.app.app_env,
+                _out=self.process_output,
+                _bg=True)
+        p.wait()

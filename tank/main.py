@@ -63,6 +63,8 @@ class MixbytesTank(App):
         # set the output handler
         output_handler = 'jinja2'
 
+        template_handler = 'jinja2'
+
         # register handlers
         handlers = [
             Base,
@@ -82,8 +84,8 @@ class MixbytesTank(App):
         self.provider = self.config.get(self.Meta.label, "provider")
         self.root_dir = pkg_resources.resource_filename(
              self.Meta.label, '/')
-        self.terraform_plan_dir = pkg_resources.resource_filename(
-             self.Meta.label, 'providers' + "/" + self.provider)
+        self.terraform_plan_dir = self.root_dir + "/" +\
+                                  'providers' + "/" + self.provider
         self.terraform_log_path = self.log_dir + 'terraform.log'
 
         fs.ensure_dir_exists(self.state_dir)
@@ -99,6 +101,8 @@ class MixbytesTank(App):
             self.app_env["TF_VAR_"+common_key] = self.config.get(self.Meta.label, common_key)
         for provider_key in self.config.keys(self.provider):
             self.app_env["TF_VAR_"+provider_key] = self.config.get(self.provider, provider_key)
+        self.app_env["ANSIBLE_ROLES_PATH"] = self.state_dir+"/roles"
+        self.app_env["ANSIBLE_CONFIG"] = self.root_dir+"/tools/ansible/ansible.cfg"
 
         # print(self.app_env)
         # print(self.app_env["TF_VAR_setup_id"])
