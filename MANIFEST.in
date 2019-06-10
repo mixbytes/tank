@@ -1,5 +1,5 @@
 recursive-include *.py
 include setup.cfg
-include README.md CHANGELOG.md LICENSE.md
+include README.md CHANGELOG.md LICENSE
 include *.txt
 recursive-include tank/templates *

@@ -27,7 +27,3 @@ class Base(Controller):
     def _default(self):
         """Default action if no sub-command is passed."""
         self.app.args.print_help()
-
-    @ex(help='Create and provision blockchain instances')
-    def deploy(self):
-        self.Cluster.init()

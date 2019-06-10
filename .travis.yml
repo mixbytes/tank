@@ -1,39 +1,24 @@
 dist: xenial
+
+sudo: false
+
 language: python
-cache:
-  directories:
-    - $HOME/.cache/pip
-python:
-- '3.7'
+
 matrix:
   include:
-    - name: "Python 3.7.1 on Xenial Linux"
-      python: 3.7           # this works for Linux but is ignored on macOS or Windows
-      dist: xenial          # required for Python >= 3.7
-    - name: "Python 3.7.2 on macOS"
-      os: osx
-      osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
-      language: shell       # 'language: python' is an error on Travis CI macOS
-install: pip install -r requirements-py.txt
-jobs:
-  include:
-    - stage: deploy_test
-      deploy:
-        provider: pypi
-        skip_existing: true
-        user: "alevkin"
-        password:
-          secure: "Mq/CJ5rKHsaGh1zy3USQo2Xg4WqRSCEo57hCOFW0ZGGe7OOiOTRLWKH+vhtRn/SNCIrOEDdvJ1Pqgbq7I5Do8FtJ/Gg5X6+8y386LASFbg/dV1Li8YYv112UIQATaWBe3vPKuzFaKsgnAZzakZQiR2ZcQ9Nf/YA5WvCR/sUiGUtJO8Pbs/NFtAYdUo7NkYVDvfJ4mK4EjQl3njdmNS3TBKEwea+obctlKOkyzIdNUU6h6/lffnOWmI5d5GwGNXJAHBtRg21dyp2MM2bxdBcTvl7Lq5rNoz0TYJZlpcUMT2E66hgJCt+0t12QK3WwvJl0FZAUhZ+sCegftBk1RGof9ZZ6TZZw2WRbhMs3nD842u0MjpugsERX7eo+yYqkhUiM+Pw3e+K4g13io2Poyx/HeTM7ifsFxxXul0E/q/jCFokIiKADmDK+BDoVoBOgGFaWVBUq37INPDcGC3uyOzfyCtqyQfYCO11EOeoGUNYXz8sLW+afjaIU3PQihRCszm/CROpRcNZ2t/eUqJG3r+j6+NcS0Xg4fXXB4khtX2wofKBcTLdr2N+Iefbmyjzzb9WrO3x6S6DurO5oWBwOwcfww928+h9PX9PLokcX8GMKQAtKde7abm56csxr0HnEhY3kh8TcjnGKZwXOOjW+5d0gjN4t4v8ERMktKGJA2oNPQ/g="
-        on:
-          all_branches: true
-    - stage: deploy_release
-      deploy:
-        provider: pypi
-        server: https://test.pypi.org/legacy/
-        user: "alevkin"
-        password:
-          secure: "Mq/CJ5rKHsaGh1zy3USQo2Xg4WqRSCEo57hCOFW0ZGGe7OOiOTRLWKH+vhtRn/SNCIrOEDdvJ1Pqgbq7I5Do8FtJ/Gg5X6+8y386LASFbg/dV1Li8YYv112UIQATaWBe3vPKuzFaKsgnAZzakZQiR2ZcQ9Nf/YA5WvCR/sUiGUtJO8Pbs/NFtAYdUo7NkYVDvfJ4mK4EjQl3njdmNS3TBKEwea+obctlKOkyzIdNUU6h6/lffnOWmI5d5GwGNXJAHBtRg21dyp2MM2bxdBcTvl7Lq5rNoz0TYJZlpcUMT2E66hgJCt+0t12QK3WwvJl0FZAUhZ+sCegftBk1RGof9ZZ6TZZw2WRbhMs3nD842u0MjpugsERX7eo+yYqkhUiM+Pw3e+K4g13io2Poyx/HeTM7ifsFxxXul0E/q/jCFokIiKADmDK+BDoVoBOgGFaWVBUq37INPDcGC3uyOzfyCtqyQfYCO11EOeoGUNYXz8sLW+afjaIU3PQihRCszm/CROpRcNZ2t/eUqJG3r+j6+NcS0Xg4fXXB4khtX2wofKBcTLdr2N+Iefbmyjzzb9WrO3x6S6DurO5oWBwOwcfww928+h9PX9PLokcX8GMKQAtKde7abm56csxr0HnEhY3kh8TcjnGKZwXOOjW+5d0gjN4t4v8ERMktKGJA2oNPQ/g="
-        on:
-          tags: true
+    - python: 3.7
+
+cache:
+  - pip
+
 script:
   - echo 'OK'
+
+deploy:
+  - provider: pypi
+    user: alevkin
+    password:
+      secure: oPZIs+wNH36yfnNFBYGqDpg0Z14pmbMXW1A/0DwGtijz7ktRgjAkV+IEZDo/6xF1NgktDBUE8fiMepxhvlTOqkheoidmCEWW3Fip4RaybNpBg87m2iIHP6MyrTIOTPXn730n8M7aGHOy7/OPOkaik7L7pOvLuLLnGb4o5sXIJ6vPSD8KICjA9B9W1DfxAj/dnSnB2ca6iWUcGrOJwy5bDz9ZYPOvlTsXtFyWi6Yfog5F43/iRxICxz612xS0tcyEcQBvymwfJ6ZQAiyqCgt3KJHBX4vgzAKukY77t+1x5ImlpMk7tZ0fMnpkwtvwj2D8Sj54YoDF5kivsRX3UtX7Cl8fgqXrjixXhye5ARrxfSNk8mQ4IV9Iq8ZSTO/gs3T4oJDF29GD6JOPybLXsOGDW/rCg0giS56SWzImKkeoHVhrUUMdCuvPptvMrBmXy4jYzBtPoQhOhv3Q/D8nmDvfAL9abzWGFLAYQ3USaUNjCsMf0w0uZzMOhpL9jHPKb66OjMFQZOj0ZIuHPaVqJTakUIon0NMYGjLQZBgS4OIE/Bg76JlGTd9E4OEHJRw8plGqXhnRqNpBouQ7LwcrSVIzUSlRwErgVuyWCGACwxUTB/yOktfNPz5g/+IJViCZ4gFQqTkzltJ/3y1UlkYzsYrxKHVsD/F5EohgbdquYYgNyPI=
+    distributions: sdist bdist_wheel
+    on:
+      tags: true

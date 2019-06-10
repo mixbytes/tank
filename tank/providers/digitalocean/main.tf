@@ -15,7 +15,7 @@ resource "digitalocean_droplet" "tank-boot" {
     image = "ubuntu-18-04-x64"
     name = "tank-${var.blockchain_name}-${var.setup_id}-boot"
     region = "fra1"
-    size = "512mb"
+    size = "2gb"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
@@ -38,7 +38,7 @@ resource "digitalocean_droplet" "tank-producer" {
     name = "tank-${var.blockchain_name}-${var.setup_id}-producer-${count.index}"
     count = "${var.bc_count_prod_instances}"
     region = "fra1"
-    size = "512mb"
+    size = "2gb"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
