@@ -2,8 +2,6 @@
 from setuptools import setup, find_packages
 from tank.core.version import get_version
 
-VERSION = get_version()
-
 with open('README.md', 'r') as f:
     LONG_DESCRIPTION = f.read()
 
@@ -19,7 +17,7 @@ requires = [
 
 setup_options = dict(
     name='mixbytes-tank',
-    version=VERSION,
+    version=get_version(),
     description='Benchmark engine for blockchains',
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',

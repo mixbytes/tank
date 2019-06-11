@@ -1,7 +1,7 @@
 
 from cement import Controller, ex
 from cement.utils.version import get_version_banner
-from ..core.version import get_version
+from tank.core.version import get_version
 
 VERSION_BANNER = """
 Bench toolkit for blockchain %s
