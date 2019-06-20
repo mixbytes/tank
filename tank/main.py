@@ -106,8 +106,7 @@ class MixbytesTank(App):
         self.root_dir = os.path.realpath(os.path.dirname(__file__))+"/"
 
         self.provider = self.config.get(self.Meta.label, "provider")
-        self.terraform_provider_dir = join(self.root_dir, 'providers', self.provider)
-        self.terraform_plan_dir = self.terraform_provider_dir
+        self.terraform_plan_dir = join(self.root_dir, 'providers', self.provider)
         self.terraform_log_path = self.log_dir + 'terraform.log'
         self.terraform_run_command = self.config.get(self.Meta.label, 'terraform_run_command')
         self.terraform_inventory_run_command = self.config.get(self.Meta.label, 'terraform_inventory_run_command')

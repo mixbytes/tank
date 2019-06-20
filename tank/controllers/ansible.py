@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import os
 import sys
 from collections import namedtuple
@@ -16,7 +18,7 @@ variable_manager = VariableManager(loader=loader, inventory=inventory)
 playbook_path = 'play.yml'
 
 if not os.path.exists(playbook_path):
-    print '[INFO] The playbook does not exist'
+    print('[INFO] The playbook does not exist')
     sys.exit()
 
 Options = namedtuple('Options',

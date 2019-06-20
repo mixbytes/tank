@@ -128,7 +128,7 @@ class Cluster(Controller):
                     '--private-key', self.app.config.get(self.app.label, 'pvt_key'),
                     '*producer*',
                     '-a', bench_command],
-                   cwd=self.app.terraform_provider_dir,
+                   cwd=self.app.terraform_plan_dir,
                    env=self.app.app_env)
 
     @ex(help='Destroy all instances')
