@@ -1,25 +1,35 @@
 import os
 from os.path import join
+from typing import Dict
+
 import sh
 from tinydb import TinyDB
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
-from .core.exc import MixbytesTankError, TerraformNotAvailable
-from .controllers.base import Base
-from .controllers.cluster import Cluster
 from cement.utils import fs
 
-# configuration defaults
-CONFIG = init_defaults('tank',
-                       'digitalocean',
-                       'log.logging')
-CONFIG['tank']['state_file'] = '~/.tank/tank.json'
-CONFIG['tank']['provider'] = 'digitalocean'
-CONFIG['tank']['terraform_run_command'] = 'terraform'
-CONFIG['tank']['terraform_inventory_run_command'] = '/usr/local/bin/terraform-inventory'
-CONFIG['tank']['blockchain_instances'] = 2
-CONFIG['digitalocean']['private_interface'] = 'eth0'
-CONFIG['log.logging']['level'] = 'info'
+from tank.core.exc import MixbytesTankError
+from tank.controllers.base import Base
+from tank.controllers.cluster import Cluster
+
+
+def _default_config() -> Dict:
+    config = init_defaults('tank',
+                           'digitalocean',
+                           'log.logging')
+
+    config['tank'] = {
+        'state_file': '~/.tank/tank.json',
+        'provider': 'digitalocean',
+        'terraform_run_command': '/usr/local/bin/terraform',
+        'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
+        'blockchain_instances': 2
+    }
+
+    config['digitalocean']['private_interface'] = 'eth0'
+    config['log.logging']['level'] = 'info'
+
+    return config
 
 
 def extend_tinydb(app):
@@ -39,7 +49,7 @@ class MixbytesTank(App):
         label = 'tank'
 
         # configuration defaults
-        config_defaults = CONFIG
+        config_defaults = _default_config()
 
         # call sys.exit() on close
         close_on_exit = True
@@ -79,24 +89,6 @@ class MixbytesTank(App):
             ('post_setup', extend_tinydb),
         ]
 
-    def _check_terraform_availability(self):
-        try:
-            sh.Command(self.terraform_run_command, "--version")
-        except Exception:
-            raise TerraformNotAvailable('Terraform not found. Running command \'{}\''.format(self.terraform_run_command))
-
-        try:
-            sh.Command(self.terraform_inventory_run_command, "-version")
-        except Exception:
-            raise TerraformNotAvailable('Terraform Inventory not found. Running command \'{}\''.format(self.terraform_inventory_run_command))
-        return
-
-    def _check_terraform_inventory_availability(self):
-        try:
-            sh.Command(self.terraform_run_command, "--version")
-        except Exception:
-            raise TerraformInventoryNotAvailable
-        return
 
     def setup(self):
         super(MixbytesTank, self).setup()
@@ -108,8 +100,6 @@ class MixbytesTank(App):
         self.provider = self.config.get(self.Meta.label, "provider")
         self.terraform_plan_dir = join(self.root_dir, 'providers', self.provider)
         self.terraform_log_path = self.log_dir + 'terraform.log'
-        self.terraform_run_command = self.config.get(self.Meta.label, 'terraform_run_command')
-        self.terraform_inventory_run_command = self.config.get(self.Meta.label, 'terraform_inventory_run_command')
 
         fs.ensure_dir_exists(self.state_dir)
         fs.ensure_dir_exists(self.log_dir)
@@ -137,6 +127,28 @@ class MixbytesTank(App):
     def blockchain_instances(self):
         return int(self.config.get(self.Meta.label, 'blockchain_instances'))
 
+    @property
+    def terraform_run_command(self):
+        return self.config.get(self.Meta.label, 'terraform_run_command')
+
+    @property
+    def terraform_inventory_run_command(self):
+        return self.config.get(self.Meta.label, 'terraform_inventory_run_command')
+
+
+    def _check_terraform_availability(self):
+        try:
+            sh.Command(self.terraform_run_command, "--version")
+        except Exception:
+            raise MixbytesTankError("Error calling Terraform at '{}'".format(self.terraform_run_command))
+
+    def _check_terraform_inventory_availability(self):
+        try:
+            sh.Command(self.terraform_inventory_run_command, "-version")
+        except Exception:
+            raise MixbytesTankError("Error calling Terraform Inventory at '{}'".format(
+                self.terraform_inventory_run_command))
+
 
 class MixbytesTankTest(TestApp, MixbytesTank):
     """A sub-class of MixbytesTank that is better suited for testing."""
@@ -148,40 +160,22 @@ class MixbytesTankTest(TestApp, MixbytesTank):
 def main():
     with MixbytesTank() as app:
         try:
-            # app.config.parse_file('~/.tank/config/tank.yml')
-            # print(app.config.get_dict())
             app._check_terraform_availability()
             app._check_terraform_inventory_availability()
             app.run()
 
-        except AssertionError as e:
-            print('AssertionError > %s' % e.args[0])
-            app.exit_code = 1
-
-            if app.debug is True:
-                import traceback
-                traceback.print_exc()
-
-        except TerraformNotAvailable as e:
-            print(e)
-            app.exit_code = 1
-
         except MixbytesTankError as e:
-            print('MixbytesTankError > %s' % e.args[0])
+            print('MixbytesTankError: {}'.format(e))
             app.exit_code = 1
 
             if app.debug is True:
                 import traceback
                 traceback.print_exc()
 
+        # FIXME better signal handling
         except CaughtSignal as e:
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
             print('\n%s' % e)
-            app.exit_code = 0
-
-        except sh.CommandNotFound as e:
-            # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
-            print('You should install terraform')
             app.exit_code = 0
 
 

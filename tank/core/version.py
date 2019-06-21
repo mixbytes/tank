@@ -41,7 +41,7 @@ import os  # pragma: nocover
 import subprocess  # pragma: nocover
 
 
-VERSION = (0, 1, 0, 'alpha', 0)
+VERSION = (0, 1, 1, 'alpha', 0)
 
 
 def get_version():  # pragma: nocover
