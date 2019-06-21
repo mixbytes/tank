@@ -155,5 +155,10 @@ class Cluster(Controller):
         ])
     def deploy(self):
         testcase = TestCase(first(self.app.pargs.testcase))
-        print(Run.new_run(self.app, testcase).run_id)
+        run = Run.new_run(self.app, testcase)
+        print('Created tank run: {}'.format(run.run_id))
 
+        run.init()
+        run.create()
+        run.dependency()
+        run.provision()
