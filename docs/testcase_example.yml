@@ -1,0 +1,5 @@
+binding: polkadot
+
+instances:
+  boot: 1
+  producer: 3

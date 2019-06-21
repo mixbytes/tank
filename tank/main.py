@@ -1,6 +1,6 @@
 import os
-from os.path import join
 from typing import Dict
+import pathlib
 
 import sh
 from tinydb import TinyDB
@@ -92,48 +92,33 @@ class MixbytesTank(App):
 
     def setup(self):
         super(MixbytesTank, self).setup()
-        self.work_dir = fs.abspath('.')
-        self.state_dir = self.work_dir + '/.tank/state/'
-        self.log_dir = self.work_dir + '/.tank/log/'
         self.root_dir = os.path.realpath(os.path.dirname(__file__))+"/"
 
         self.provider = self.config.get(self.Meta.label, "provider")
-        self.terraform_plan_dir = join(self.root_dir, 'providers', self.provider)
-        self.terraform_log_path = self.log_dir + 'terraform.log'
-
-        fs.ensure_dir_exists(self.state_dir)
-        fs.ensure_dir_exists(self.log_dir)
-
-        self.terraform_state_file = self.state_dir + "/blockchain.tfstate"
-        self.app_env = os.environ.copy()
-        self.app_env["TF_LOG"] = "TRACE"
-        self.app_env["TF_LOG_PATH"] = self.terraform_log_path
-        self.app_env["TF_DATA_DIR"] = self.state_dir
-        self.app_env["TF_IN_AUTOMATION"] = "true"
-        self.app_env["TF_VAR_state_path"] = self.terraform_state_file
-        self.app_env["TF_VAR_bc_count_prod_instances"] = str(self.blockchain_instances - 1)
-        for common_key in self.config.keys(self.Meta.label):
-            self.app_env["TF_VAR_" + common_key] = \
-                self.config.get(self.Meta.label, common_key)
-        for provider_key in self.config.keys(self.provider):
-            self.app_env["TF_VAR_" + provider_key] = \
-                self.config.get(self.provider, provider_key)
-        self.app_env["ANSIBLE_ROLES_PATH"] = \
-            self.state_dir + "/roles"
-        self.app_env["ANSIBLE_CONFIG"] = \
-            self.root_dir + "/tools/ansible/ansible.cfg"
+        self.terraform_plan_dir = fs.join(self.root_dir, 'providers', self.provider)
 
     @property
-    def blockchain_instances(self):
+    def app_env(self) -> Dict:
+        env = os.environ.copy()
+        env["TF_LOG"] = "TRACE"
+        env["TF_IN_AUTOMATION"] = "true"
+        return env
+
+    @property
+    def blockchain_instances(self) -> int:
         return int(self.config.get(self.Meta.label, 'blockchain_instances'))
 
     @property
-    def terraform_run_command(self):
+    def terraform_run_command(self) -> str:
         return self.config.get(self.Meta.label, 'terraform_run_command')
 
     @property
-    def terraform_inventory_run_command(self):
+    def terraform_inventory_run_command(self) -> str:
         return self.config.get(self.Meta.label, 'terraform_inventory_run_command')
+
+    @property
+    def user_dir(self) -> str:
+        return fs.abspath(fs.join(pathlib.Path.home(), '.tank'))
 
 
     def _check_terraform_availability(self):

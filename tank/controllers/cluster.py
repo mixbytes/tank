@@ -4,6 +4,10 @@ from subprocess import check_call
 from cement import Controller, ex
 import sh
 
+from tank.core.run import Run
+from tank.core.testcase import TestCase
+from tank.core.lambdas import first
+
 
 class Cluster(Controller):
 
@@ -143,10 +147,13 @@ class Cluster(Controller):
                 _bg=True)
         p.wait()
 
-    @ex(help='Create and setup cluster (init, create, dependency, provision')
+    @ex(help='Create and setup cluster (init, create, dependency, provision)',
+        arguments=[
+            (['testcase'],
+             {'type': str,
+              'nargs': 1})
+        ])
     def deploy(self):
-        self.init()
-        self.create()
-        self.dependency()
-        self.provision()
+        testcase = TestCase(first(self.app.pargs.testcase))
+        print(Run.new_run(self.app, testcase).run_id)
 
