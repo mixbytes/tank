@@ -5,7 +5,7 @@
 import yaml
 import jsonschema
 
-from tank.core.exc import MixbytesTankError
+from tank.core.exc import TankError
 
 
 class TestCase:
@@ -21,7 +21,7 @@ class TestCase:
         try:
             jsonschema.validate(self._content, self.__class__._TESTCASE_SCHEMA)
         except jsonschema.ValidationError as e:
-            raise MixbytesTankError('Failed to validate testcase {}'.format(filename), e)
+            raise TankError('Failed to validate testcase {}'.format(filename), e)
 
     def save(self, filename):
         with open(filename, 'w') as fh:

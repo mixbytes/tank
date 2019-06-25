@@ -1,41 +1,45 @@
-variable "bc_count_prod_instances" {}
-variable "setup_id" {}
-variable "blockchain_name" {}
+# user-specific settings
 variable "pub_key" {
   description = "Path to file containing public key"
-  default = "~/.ssh/id_rsa.pub"
 }
 variable "pvt_key" {
   description = "Path to file containing private key"
-  default = "~/.ssh/id_rsa"
 }
-variable "gce_cred_path" {
-  default = "~/.ssh/gce.json"
-}
-variable "gce_project" {}
-variable "gce_region_zone" {
+variable "cred_path" {}
+variable "project" {}
+
+# test case-specific settings
+variable "bc_count_prod_instances" {}
+variable "blockchain_name" {}
+
+variable "region_zone" {
   default = "europe-west4-a"
 }
 
-variable "gce_region" {
+variable "region" {
   default = "europe-west4"
 }
 
-variable "gce_machine_type" {
+variable "machine_type" {
   default = "f1-micro"
 }
 
+# FIXME remove me
+variable "setup_id" {}
+
+
 provider "google" {
   version = "~> 2.5"
-  credentials = "${file("${var.gce_cred_path}")}"
-  project     = "${var.gce_project}"
-  region      = "${var.gce_region}"
+  credentials = "${file("${var.cred_path}")}"
+  project     = "${var.project}"
+  region      = "${var.region}"
 }
+
 
 resource "google_compute_instance" "tank-boot" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-boot"
-  machine_type = "${var.gce_machine_type}"
-  zone         = "${var.gce_region_zone}"
+  machine_type = "${var.machine_type}"
+  zone         = "${var.region_zone}"
   tags         = ["blockchain"]
 
   boot_disk {
@@ -72,8 +76,8 @@ resource "google_compute_instance" "tank-boot" {
 
 resource "google_compute_instance" "tank-producer" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-producer-${count.index}"
-  machine_type = "${var.gce_machine_type}"
-  zone         = "${var.gce_region_zone}"
+  machine_type = "${var.machine_type}"
+  zone         = "${var.region_zone}"
   tags         = ["blockchain"]
   count        = "${var.bc_count_prod_instances}"
 
@@ -130,8 +134,8 @@ resource "google_compute_firewall" "default" {
 
 resource "google_compute_instance" "monitoring" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-monitoring"
-  machine_type = "${var.gce_machine_type}"
-  zone         = "${var.gce_region_zone}"
+  machine_type = "${var.machine_type}"
+  zone         = "${var.region_zone}"
   tags         = ["monitoring"]
 
   boot_disk {

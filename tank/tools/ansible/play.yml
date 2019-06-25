@@ -14,8 +14,6 @@
 - name: Create groups
   hosts: localhost
   gather_facts: false
-  vars:
-    bc_private_interface: enp0s8
   tasks:
     - name: "Add boot node to group bcboot"
       changed_when: False

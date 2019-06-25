@@ -1,15 +1,21 @@
+# user-specific settings
 variable "token" {}
-variable "pub_key" {}
 variable "pvt_key" {}
 variable "ssh_fingerprint" {}
+
+# test case-specific settings
 variable "bc_count_prod_instances" {}
-variable "setup_id" {}
 variable "blockchain_name" {}
+
+# FIXME remove me
+variable "setup_id" {}
+
 
 provider "digitalocean" {
   version = "~> 1.1"
   token = "${var.token}"
 }
+
 
 resource "digitalocean_droplet" "tank-boot" {
     image = "ubuntu-18-04-x64"

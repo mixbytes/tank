@@ -8,7 +8,8 @@ from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
 
-from tank.core.exc import MixbytesTankError
+from tank.core.cloud_settings import CloudUserSettings
+from tank.core.exc import TankError
 from tank.controllers.base import Base
 from tank.controllers.cluster import Cluster
 
@@ -20,13 +21,11 @@ def _default_config() -> Dict:
 
     config['tank'] = {
         'state_file': '~/.tank/tank.json',
-        'provider': 'digitalocean',
         'terraform_run_command': '/usr/local/bin/terraform',
         'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
         'blockchain_instances': 2
     }
 
-    config['digitalocean']['private_interface'] = 'eth0'
     config['log.logging']['level'] = 'info'
 
     return config
@@ -90,6 +89,11 @@ class MixbytesTank(App):
         ]
 
 
+    def __init__(self):
+        super().__init__()
+        self._cloud_settings = None
+
+
     def setup(self):
         super(MixbytesTank, self).setup()
         self.root_dir = os.path.realpath(os.path.dirname(__file__))+"/"
@@ -103,6 +107,13 @@ class MixbytesTank(App):
         env["TF_LOG"] = "TRACE"
         env["TF_IN_AUTOMATION"] = "true"
         return env
+
+    @property
+    def cloud_settings(self) -> CloudUserSettings:
+        if self._cloud_settings is None:
+            self._cloud_settings = CloudUserSettings(self.config)
+
+        return self._cloud_settings
 
     @property
     def blockchain_instances(self) -> int:
@@ -125,13 +136,13 @@ class MixbytesTank(App):
         try:
             sh.Command(self.terraform_run_command, "--version")
         except Exception:
-            raise MixbytesTankError("Error calling Terraform at '{}'".format(self.terraform_run_command))
+            raise TankError("Error calling Terraform at '{}'".format(self.terraform_run_command))
 
     def _check_terraform_inventory_availability(self):
         try:
             sh.Command(self.terraform_inventory_run_command, "-version")
         except Exception:
-            raise MixbytesTankError("Error calling Terraform Inventory at '{}'".format(
+            raise TankError("Error calling Terraform Inventory at '{}'".format(
                 self.terraform_inventory_run_command))
 
 
@@ -149,8 +160,8 @@ def main():
             app._check_terraform_inventory_availability()
             app.run()
 
-        except MixbytesTankError as e:
-            print('MixbytesTankError: {}'.format(e))
+        except TankError as e:
+            print('{}: {}'.format(e.__class__.__name__, e))
             app.exit_code = 1
 
             if app.debug is True:

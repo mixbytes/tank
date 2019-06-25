@@ -3,6 +3,7 @@ from subprocess import check_call
 
 from cement import Controller, ex
 import sh
+from cement.utils import fs
 
 from tank.core.run import Run
 from tank.core.testcase import TestCase
@@ -92,18 +93,19 @@ class Cluster(Controller):
 
     @ex(help='Setup instances: configs, packages, services, etc')
     def provision(self):
-        cmd = sh.Command("ansible-playbook")
-        p = cmd(
-                "-f", "10", "-u", "root", "-i",
-                self.app.terraform_inventory_run_command,
-                "-e", "bc_private_interface='"+self.app.config.get(self.app.provider, "private_interface")+"'",
-                "--private-key={}".format(self.app.config.get(self.app.label, 'pvt_key')),
-                self.app.root_dir+"/tools/ansible/play.yml",
-                _cwd=self.app.terraform_plan_dir,
-                _env=self.app.app_env,
-                _out=self.process_output,
-                _bg=True)
-        p.wait()
+        args = ["-f", "10", "-u", "root", "-i", self.app.terraform_inventory_run_command]
+
+        for k, v in self.app.cloud_settings.ansible_vars.items():
+            args.extend(['-e', 'bc_{}={}'.format(k, v)])
+
+        args.extend([
+            "--private-key={}".format(self.app.cloud_settings.provider_vars['pvt_key']),
+            fs.join(self.app.root_dir, 'tools/ansible/play.yml')])
+
+        sh.Command("ansible-playbook")(*args,
+                                       _cwd=self.app.terraform_plan_dir,
+                                       _env=self.app.app_env,
+                                       _out=self.process_output)
 
     @ex(help='Runs bench on prepared cluster',
         arguments=[
