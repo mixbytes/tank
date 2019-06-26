@@ -5,12 +5,15 @@
 import os
 import tempfile
 from time import time
+from typing import Dict
+from uuid import uuid4
 
 import sh
 from cement import fs
 import yaml
 
 from tank.core.testcase import TestCase
+from tank.core.tf import PlanGenerator
 
 
 class Run:
@@ -41,6 +44,8 @@ class Run:
         self.run_id = run_id
 
         self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
+        with open(fs.join(self._dir, 'meta.yml')) as fh:
+            self._meta = yaml.safe_load(fh)
 
     def init(self):
         """
@@ -61,6 +66,10 @@ class Run:
     def provision(self):
         raise NotImplementedError()
 
+    @property
+    def meta(self) -> Dict:
+        return dict(self._meta)
+
 
     @classmethod
     def _runs_dir(cls, app) -> str:
@@ -71,6 +80,7 @@ class Run:
         meta = {
             'testcase_filename': fs.abspath(testcase.filename),
             'created': int(time()),
+            'setup_id': uuid4().hex,
         }
 
         with open(fs.join(run_dir, 'meta.yml'), 'w') as fh:
@@ -86,6 +96,11 @@ class Run:
         env["TF_LOG_PATH"] = fs.join(self._log_dir, 'terraform.log')
         env["TF_DATA_DIR"] = self._tf_data_dir
         env["TF_VAR_state_path"] = self._tf_state_file
+        env["TF_VAR_blockchain_name"] = self._testcase.binding
+        env["TF_VAR_setup_id"] = self._meta['setup_id']
+
+        for k, v in self._app.cloud_settings.provider_vars.items():
+            env["TF_VAR_{}".format(k)] = v
 
         env["ANSIBLE_ROLES_PATH"] = fs.join(self._dir, "ansible_roles")
         env["ANSIBLE_CONFIG"] = fs.join(fs.abspath(os.path.dirname(__file__)), '..', 'tools', 'ansible', 'ansible.cfg')
@@ -96,15 +111,7 @@ class Run:
         """
         Generation of Terraform manifests specific for this run and user preferences.
         """
-
-        # for common_key in self.config.keys(self.Meta.label):
-        #     env["TF_VAR_" + common_key] = \
-        #         self.config.get(self.Meta.label, common_key)
-        # for provider_key in self.config.keys(self.provider):
-        #     env["TF_VAR_" + provider_key] = \
-        #         self.config.get(self.provider, provider_key)
-
-        raise NotImplementedError()
+        PlanGenerator(self._app, self._testcase).generate(self._tf_plan_dir)
 
 
     @property

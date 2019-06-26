@@ -1,3 +1,4 @@
+{% raw %}
 variable "state_path" {}
 
 terraform {
@@ -10,3 +11,4 @@ data "terraform_remote_state" "state" {
     path = "${var.state_path}}"
   }
 }
+{% endraw %}
