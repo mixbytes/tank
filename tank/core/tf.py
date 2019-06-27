@@ -8,6 +8,7 @@ from os.path import dirname, isdir
 
 from cement.utils import fs
 
+from tank.core import resource_path
 from tank.core.exc import TankError, TankTestCaseError
 from tank.core.testcase import TestCase
 
@@ -50,4 +51,4 @@ class PlanGenerator:
 
     @property
     def _provider_templates(self) -> str:
-        return fs.abspath(fs.join(dirname(__file__), '..', 'providers', self._app.cloud_settings.provider.value))
+        return resource_path('providers', self._app.cloud_settings.provider.value)

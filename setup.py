@@ -44,13 +44,6 @@ setup_options = dict(
     ],
     keywords='bench benchmark blockchain',
     packages=find_packages(exclude=['ez_setup', 'tests*']),
-    package_data={
-        'tank':
-            ['templates/*',
-             'providers/*/*',
-             'tools/*/*',
-             '*.sh']
-    },
     include_package_data=True,
     install_requires=requires,
     python_requires='>=3',

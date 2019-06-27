@@ -11,14 +11,19 @@ from uuid import uuid4
 import sh
 from cement import fs
 import yaml
+from filelock import FileLock
 
+from tank.core import resource_path
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
+from tank.core.utils import yaml_load, yaml_dump
 
 
 class Run:
     """
     Single run of a tank testcase.
+
+    TODO detect and handle CloudUserSettings change.
     """
 
     @classmethod
@@ -44,24 +49,56 @@ class Run:
         self.run_id = run_id
 
         self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
-        with open(fs.join(self._dir, 'meta.yml')) as fh:
-            self._meta = yaml.safe_load(fh)
+        self._meta = yaml_load(fs.join(self._dir, 'meta.yml'))
 
     def init(self):
         """
-        Download plugins, modules for Terraform.
+        Download plugins and modules for Terraform.
         """
-        self._generate_tf_plan()
+        with self._lock:
+            self._generate_tf_plan()
 
-        sh.Command(self._app.terraform_run_command)(
-            "init", "-backend-config", "path={}".format(self._tf_state_file), self._tf_plan_dir,
-            _env=self._make_env())
+            sh.Command(self._app.terraform_run_command)(
+                "init", "-backend-config", "path={}".format(self._tf_state_file), self._tf_plan_dir,
+                _env=self._make_env())
+
+    def plan(self):
+        """
+        Generate and show an execution plan by Terraform.
+        """
+        with self._lock:
+            sh.Command(self._app.terraform_run_command)(
+                "plan", "-input=false", self._tf_plan_dir,
+                _env=self._make_env())
 
     def create(self):
-        raise NotImplementedError()
+        """
+        Create instances for the cluster.
+        """
+        with self._lock:
+            sh.Command(self._app.terraform_run_command)(
+                "apply", "-auto-approve", "-parallelism=100", self._tf_plan_dir,
+                _env=self._make_env())
 
     def dependency(self):
-        raise NotImplementedError()
+        """
+        Install Ansible roles from Galaxy or SCM.
+        """
+        with self._lock:
+            ansible_deps = yaml_load(resource_path('ansible', 'ansible-requirements.yml'))
+
+            ansible_deps.append({
+                'src': self.app.config.get(                    self.app.label, 'blockchain_ansible_repo'),
+                'version': self.app.config.get(                    self.app.label, 'blockchain_ansible_repo_version'),
+                'name': 'tank.blockchain',
+            })
+
+            requirements_file = fs.join(self._dir, 'ansible-requirements.yml')
+            yaml_dump(requirements_file, ansible_deps)
+
+            sh.Command("ansible-galaxy")(
+                "install", "-f", "-r", requirements_file,
+                _env=self._make_env())
 
     def provision(self):
         raise NotImplementedError()
@@ -77,14 +114,11 @@ class Run:
 
     @classmethod
     def _save_meta(cls, run_dir: str, testcase: TestCase):
-        meta = {
+        yaml_dump(fs.join(run_dir, 'meta.yml'), {
             'testcase_filename': fs.abspath(testcase.filename),
             'created': int(time()),
             'setup_id': uuid4().hex,
-        }
-
-        with open(fs.join(run_dir, 'meta.yml'), 'w') as fh:
-            yaml.dump(meta, fh, default_flow_style=False)
+        })
 
 
     def _make_env(self):
@@ -103,7 +137,7 @@ class Run:
             env["TF_VAR_{}".format(k)] = v
 
         env["ANSIBLE_ROLES_PATH"] = fs.join(self._dir, "ansible_roles")
-        env["ANSIBLE_CONFIG"] = fs.join(fs.abspath(os.path.dirname(__file__)), '..', 'tools', 'ansible', 'ansible.cfg')
+        env["ANSIBLE_CONFIG"] = resource_path('ansible', 'ansible.cfg')
 
         return env
 
@@ -117,6 +151,10 @@ class Run:
     @property
     def _dir(self) -> str:
         return fs.join(self.__class__._runs_dir(self._app), self.run_id)
+
+    @property
+    def _lock(self) -> FileLock:
+        return FileLock(fs.join(self._dir, '.lock'))
 
     @property
     def _tf_data_dir(self) -> str:

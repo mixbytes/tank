@@ -1,5 +1,5 @@
-recursive-include *.py
+recursive-include *.py *.sh
 include setup.cfg
 include README.md CHANGELOG.md LICENSE
 include *.txt
-recursive-include tank/templates *
+recursive-include tank/resources *

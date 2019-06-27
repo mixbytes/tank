@@ -96,10 +96,6 @@ class MixbytesTank(App):
 
     def setup(self):
         super(MixbytesTank, self).setup()
-        self.root_dir = os.path.realpath(os.path.dirname(__file__))+"/"
-
-        self.provider = self.config.get(self.Meta.label, "provider")
-        self.terraform_plan_dir = fs.join(self.root_dir, 'providers', self.provider)
 
     @property
     def app_env(self) -> Dict:

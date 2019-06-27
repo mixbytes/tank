@@ -6,3 +6,4 @@ colorlog
 tinydb
 sh==1.12.13
 jsonschema==3.0.1
+filelock
