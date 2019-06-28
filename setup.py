@@ -5,15 +5,8 @@ from tank.core.version import get_version
 with open('README.md', 'r') as f:
     LONG_DESCRIPTION = f.read()
 
-requires = [
-    'cement==3.0.4',
-    'ansible==2.8.0',
-    'jinja2',
-    'pyyaml',
-    'colorlog',
-    'tinydb',
-    'sh==1.12.13'
- ]
+with open('requirements.txt', 'r') as f:
+    requires = list(filter(None, map(str.strip, f.read().split('\n'))))
 
 setup_options = dict(
     name='mixbytes-tank',
