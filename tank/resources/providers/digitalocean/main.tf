@@ -100,8 +100,8 @@ resource "digitalocean_droplet" "tank-monitoring" {
 
 # Dynamic output
 {% for name, instance_cfg in instances.items() %}
-output "{{ name }} node IP address" {
-    value = "${digitalocean_droplet.tank-{{ name }}.ipv4_address}"
+output "{{ name }} node IP addresses" {
+    value = "${digitalocean_droplet.tank-{{ name }}.*.ipv4_address}"
 }
 {% endfor %}
 # End of dynamic output
