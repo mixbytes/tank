@@ -1,0 +1,34 @@
+tank:
+  # cloud provider to use
+  provider: digitalocean
+
+digitalocean:
+  # Private key to manage benchmark instances.
+  # It's recommended to create a distinct key pair for benchmarking purposes.
+  # The simplest way is:
+  #   ssh-keygen -t rsa -b 2048 -f bench_key
+  # (leave passphrase empty)
+  # Please provide the full path to the private key.
+  pvt_key: /home/eenae/bench_temp_key
+
+  # MD5 fingerprint of the public key.
+  # Please note, in case of Digital Ocean you must add this key to your account at https://cloud.digitalocean.com/account/security (you can also get the fingerprint there).
+  ssh_fingerprint: "d5:13:35:7a:3d:2e:ca:eb:90:da:b5:5b:dd:bd:d8:fd"
+
+  # Access token for a particular cloud provider.
+  # In case of Digital Ocean the token can be created at https://cloud.digitalocean.com/account/api/tokens.
+  token: "5ffac1b92062cb08109f23c06c6f8f1787f096cac109fea60000000000000000"
+
+gce:
+  # Private key to manage benchmark instances.
+  # It's recommended to create a distinct key pair for benchmarking purposes.
+  # The simplest way is:
+  #   ssh-keygen -t rsa -b 2048 -f bench_key
+  # (leave passphrase empty)
+  # Please provide the full path to the private key.
+  pvt_key: /home/eenae/bench_temp_key
+
+  # Public key to manage benchmark instances.
+  pub_key: /home/eenae/bench_temp_key.pub
+
+  cred_path: /home/eenae/.ssh/gce.json
