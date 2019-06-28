@@ -18,99 +18,40 @@ class Cluster(Controller):
         stacked_on = 'base'
 
         # text displayed at the top of --help output
-        description = 'Manipulating of cluster'
+        description = 'Manipulating a cluster'
 
         # text displayed at the bottom of --help output
         title = 'Low level cluster management commands'
         help = 'Low level cluster management commands'
 
-    def process_output(self, line):
-        print(line, end='', flush=True)
-
-    @ex(help='Download plugins, modules for Terraform', hide=True)
+    @ex(help='Init a Tank run, download plugins and modules for Terraform', hide=True,
+        arguments=[(['testcase'], {'type': str, 'nargs': 1})])
     def init(self):
-        raise NotImplementedError()
-        # cmd = sh.Command(self.app.terraform_run_command)
-        # p = cmd(
-        #     "init", "-backend-config", "path="+self.app.terraform_state_file,
-        #     self.app.terraform_plan_dir,
-        #     _env=self.app.app_env,
-        #     _out=self.process_output,
-        #     _bg=True)
-        # p.wait()
+        testcase = TestCase(first(self.app.pargs.testcase))
+        run = Run.new_run(self.app, testcase)
+        print('Created tank run: {}'.format(run.run_id))
 
-    @ex(help='Generate and show an execution plan by Terraform', hide=True)
+        run.init()
+
+    @ex(help='Generate and show an execution plan by Terraform', hide=True,
+        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def plan(self):
-        raise NotImplementedError()
-        # cmd = sh.Command(self.app.terraform_run_command)
-        # p = cmd(
-        #     "plan", "-input=false", self.app.terraform_plan_dir,
-        #     _env=self.app.app_env,
-        #     _out=self.process_output,
-        #     _bg=True)
-        # p.wait()
+        Run(self.app, first(self.app.pargs.run_id)).plan()
 
-    @ex(help='Create instances for cluster')
+    @ex(help='Create instances for cluster',
+        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def create(self):
-        raise NotImplementedError()
-        # cmd = sh.Command(self.app.terraform_run_command)
-        # p = cmd(
-        #         "apply", "-auto-approve",
-        #         "-parallelism=100",
-        #         self.app.terraform_plan_dir,
-        #         _env=self.app.app_env,
-        #         _out=self.process_output,
-        #         _bg=True
-        #         )
-        # p.wait()
+        Run(self.app, first(self.app.pargs.run_id)).create()
 
-    @ex(help='Install Ansible roles from Galaxy or SCM')
+    @ex(help='Install Ansible roles from Galaxy or SCM',
+        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def dependency(self):
-        raise NotImplementedError()
-        # self.data = {
-        #     'blockchain_ansible_repo': self.app.config.get(
-        #         self.app.label, 'blockchain_ansible_repo'),
-        #     'blockchain_ansible_repo_version': self.app.config.get(
-        #         self.app.label, 'blockchain_ansible_repo_version')
-        # }
-        # self.ansible_req_src = self.app.root_dir+"templates"
-        # self.ansible_req_dst = self.app.state_dir+"/roles"
-        # self.app.template.copy(
-        #     self.ansible_req_src,
-        #     self.ansible_req_dst,
-        #     self.data, force=True)
-        # cmd = sh.Command("ansible-galaxy")
-        # p = cmd(
-        #         "install", "-f", "-r",
-        #         self.app.root_dir+"/tools/ansible/ansible-requirements.yml",
-        #         _env=self.app.app_env,
-        #         _out=self.process_output,
-        #         _bg=True)
-        # p.wait()
-        # p = cmd(
-        #         "install", "-f", "-r",
-        #         self.app.state_dir+"/roles/requirements.yml",
-        #         _env=self.app.app_env,
-        #         _out=self.process_output,
-        #         _bg=True)
-        # p.wait()
+        Run(self.app, first(self.app.pargs.run_id)).dependency()
 
-    @ex(help='Setup instances: configs, packages, services, etc')
+    @ex(help='Setup instances: configs, packages, services, etc',
+        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def provision(self):
-        raise NotImplementedError()
-        # args = ["-f", "10", "-u", "root", "-i", self.app.terraform_inventory_run_command]
-        #
-        # for k, v in self.app.cloud_settings.ansible_vars.items():
-        #     args.extend(['-e', 'bc_{}={}'.format(k, v)])
-        #
-        # args.extend([
-        #     "--private-key={}".format(self.app.cloud_settings.provider_vars['pvt_key']),
-        #     fs.join(self.app.root_dir, 'tools/ansible/play.yml')])
-        #
-        # sh.Command("ansible-playbook")(*args,
-        #                                _cwd=self.app.terraform_plan_dir,
-        #                                _env=self.app.app_env,
-        #                                _out=self.process_output)
+        Run(self.app, first(self.app.pargs.run_id)).provision()
 
     @ex(help='Runs bench on prepared cluster',
         arguments=[
@@ -156,12 +97,8 @@ class Cluster(Controller):
         #         _bg=True)
         # p.wait()
 
-    @ex(help='Create and setup cluster (init, create, dependency, provision)',
-        arguments=[
-            (['testcase'],
-             {'type': str,
-              'nargs': 1})
-        ])
+    @ex(help='Create and setup a cluster (init, create, dependency, provision)',
+        arguments=[(['testcase'], {'type': str, 'nargs': 1})])
     def deploy(self):
         testcase = TestCase(first(self.app.pargs.testcase))
         run = Run.new_run(self.app, testcase)
