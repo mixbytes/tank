@@ -23,7 +23,6 @@ def _default_config() -> Dict:
         'state_file': '~/.tank/tank.json',
         'terraform_run_command': '/usr/local/bin/terraform',
         'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
-        'blockchain_instances': 2
     }
 
     config['log.logging']['level'] = 'info'
@@ -96,6 +95,7 @@ class MixbytesTank(App):
 
     def setup(self):
         super(MixbytesTank, self).setup()
+        fs.ensure_dir_exists(self.user_dir)
 
     @property
     def app_env(self) -> Dict:

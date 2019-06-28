@@ -14,6 +14,7 @@ import yaml
 from filelock import FileLock
 
 from tank.core import resource_path
+from tank.core.binding import AnsibleBinding
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
 from tank.core.utils import yaml_load, yaml_dump
@@ -87,11 +88,7 @@ class Run:
         with self._lock:
             ansible_deps = yaml_load(resource_path('ansible', 'ansible-requirements.yml'))
 
-            ansible_deps.append({
-                'src': self.app.config.get(                    self.app.label, 'blockchain_ansible_repo'),
-                'version': self.app.config.get(                    self.app.label, 'blockchain_ansible_repo_version'),
-                'name': 'tank.blockchain',
-            })
+            ansible_deps.extend(AnsibleBinding(self._app, self._testcase.binding).get_dependencies())
 
             requirements_file = fs.join(self._dir, 'ansible-requirements.yml')
             yaml_dump(requirements_file, ansible_deps)
