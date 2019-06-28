@@ -3,6 +3,7 @@
 #
 
 import os
+import sys
 import tempfile
 from time import time
 from typing import Dict
@@ -61,7 +62,7 @@ class Run:
 
             sh.Command(self._app.terraform_run_command)(
                 "init", "-backend-config", "path={}".format(self._tf_state_file), self._tf_plan_dir,
-                _env=self._make_env())
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def plan(self):
         """
@@ -70,7 +71,7 @@ class Run:
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
                 "plan", "-input=false", self._tf_plan_dir,
-                _env=self._make_env())
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def create(self):
         """
@@ -79,7 +80,7 @@ class Run:
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
                 "apply", "-auto-approve", "-parallelism=100", self._tf_plan_dir,
-                _env=self._make_env())
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def dependency(self):
         """
@@ -95,7 +96,7 @@ class Run:
 
             sh.Command("ansible-galaxy")(
                 "install", "-f", "-r", requirements_file,
-                _env=self._make_env())
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
         raise NotImplementedError()
