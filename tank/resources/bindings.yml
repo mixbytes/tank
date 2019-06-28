@@ -1,5 +1,4 @@
-# List of bindings
-- polkadot:
+polkadot:
 
     # Ansible part of the binding
     ansible:
@@ -9,6 +8,6 @@
         # Optionally - branch/tag/commit to check out
         version: master
 
-- haya:
+haya:
     ansible:
-      src: https://github.com/mixbytes/tank.ansible-haya
+        src: https://github.com/mixbytes/tank.ansible-haya
