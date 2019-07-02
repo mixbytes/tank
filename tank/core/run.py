@@ -111,7 +111,7 @@ class Run:
                 "--extra-vars", self._ansible_extra_vars,
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
                 resource_path('ansible', 'play.yml'),
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
     def destroy(self):
         with self._lock:
