@@ -1,9 +1,6 @@
 
-from subprocess import check_call
-
 from cement import Controller, ex
-import sh
-from cement.utils import fs
+from tabulate import tabulate
 
 from tank.core.run import Run
 from tank.core.testcase import TestCase
@@ -24,6 +21,20 @@ class Cluster(Controller):
         title = 'Low level cluster management commands'
         help = 'Low level cluster management commands'
 
+    @ex(help='Show clusters')
+    def list(self):
+        runs = Run.list_runs(self.app)
+
+        def make_row(run):
+            return [
+                run.run_id,
+                run.created_at.strftime('%c'),
+                run.testcase_copy.total_instances,
+                run.meta['testcase_filename']
+            ]
+
+        print(tabulate(list(map(make_row, runs)), headers=['RUN ID', 'CREATED', 'INSTANCES', 'TESTCASE']))
+
     @ex(help='Init a Tank run, download plugins and modules for Terraform', hide=True,
         arguments=[(['testcase'], {'type': str, 'nargs': 1})])
     def init(self):
@@ -38,17 +49,17 @@ class Cluster(Controller):
     def plan(self):
         Run(self.app, first(self.app.pargs.run_id)).plan()
 
-    @ex(help='Create instances for cluster',
+    @ex(help='Create instances for cluster', hide=True,
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def create(self):
         Run(self.app, first(self.app.pargs.run_id)).create()
 
-    @ex(help='Install Ansible roles from Galaxy or SCM',
+    @ex(help='Install Ansible roles from Galaxy or SCM', hide=True,
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def dependency(self):
         Run(self.app, first(self.app.pargs.run_id)).dependency()
 
-    @ex(help='Setup instances: configs, packages, services, etc',
+    @ex(help='Setup instances: configs, packages, services, etc', hide=True,
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def provision(self):
         Run(self.app, first(self.app.pargs.run_id)).provision()
@@ -84,18 +95,10 @@ class Cluster(Controller):
         #            cwd=self.app.terraform_plan_dir,
         #            env=self.app.app_env)
 
-    @ex(help='Destroy all instances')
+    @ex(help='Destroy all instances of the cluster',
+        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def destroy(self):
-        raise NotImplementedError()
-        # cmd = sh.Command(self.app.terraform_run_command)
-        # p = cmd(
-        #         "destroy", "-auto-approve",
-        #         "-parallelism=100",
-        #         self.app.terraform_plan_dir,
-        #         _env=self.app.app_env,
-        #         _out=self.process_output,
-        #         _bg=True)
-        # p.wait()
+        Run(self.app, first(self.app.pargs.run_id)).destroy()
 
     @ex(help='Create and setup a cluster (init, create, dependency, provision)',
         arguments=[(['testcase'], {'type': str, 'nargs': 1})])

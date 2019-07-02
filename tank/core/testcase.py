@@ -24,6 +24,12 @@ class TestCase:
         except jsonschema.ValidationError as e:
             raise TankTestCaseError('Failed to validate testcase {}'.format(filename), e)
 
+        for name, cfg in self._content['instances'].items():
+            if name.lower() == 'monitoring':
+                raise TankTestCaseError('\'monitoring\' instance name is reserved')
+            if isinstance(cfg, int):
+                self._content['instances'][name] = {'count': cfg, 'type': 'small'}
+
     def save(self, filename):
         yaml_dump(filename, self._content)
 
@@ -34,6 +40,10 @@ class TestCase:
     @property
     def instances(self) -> Dict:
         return dict(self._content['instances'])
+
+    @property
+    def total_instances(self) -> int:
+        return sum(cfg['count'] for cfg in self.instances.values())
 
 
     _TESTCASE_SCHEMA = yaml.safe_load(r'''

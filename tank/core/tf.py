@@ -28,23 +28,15 @@ class PlanGenerator:
             ))
 
     def generate(self, plan_dir: str):
-        instances = self.testcase.instances
-        for name, cfg in instances.items():
-            if name.lower() == 'monitoring':
-                raise TankTestCaseError('\'monitoring\' instance name is reserved')
-            if isinstance(cfg, int):
-                instances[name] = {'count': cfg, 'type': 'small'}
-
-        total_machines = sum(cfg['count'] for cfg in instances.values())
-        if total_machines <= 10:
+        if self.testcase.total_instances <= 10:
             monitoring_machine_type = 'small'
-        elif total_machines < 50:
+        elif self.testcase.total_instances < 50:
             monitoring_machine_type = 'standard'
         else:
             monitoring_machine_type = 'large'
 
         self._app.template.copy(self._provider_templates, plan_dir, {
-            'instances': instances,
+            'instances': self.testcase.instances,
             'monitoring_machine_type': monitoring_machine_type,
         })
 

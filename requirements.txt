@@ -7,3 +7,4 @@ tinydb
 sh==1.12.13
 jsonschema==3.0.1
 filelock
+tabulate==0.8.3

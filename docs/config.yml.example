@@ -19,6 +19,12 @@ digitalocean:
   # In case of Digital Ocean the token can be created at https://cloud.digitalocean.com/account/api/tokens.
   token: "5ffac1b92062cb08109f23c06c6f8f1787f096cac109fea60000000000000000"
 
+  # Optional, for every cloud provider: ansible variable definitions.
+  # Each variable will be passed to ansible as -e bc_{var_name}={value}
+  ansible:
+    # Name of the network interface of cloud machines
+    private_interface: eth0
+
 gce:
   # Private key to manage benchmark instances.
   # It's recommended to create a distinct key pair for benchmarking purposes.

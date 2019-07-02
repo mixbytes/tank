@@ -1,24 +1,25 @@
 #
 #   module tank.core.run
 #
-
 import os
 import sys
 import tempfile
+from shutil import rmtree
 from time import time
 from typing import Dict
 from uuid import uuid4
+import json
+from datetime import datetime
 
 import sh
 from cement import fs
-import yaml
 from filelock import FileLock
 
 from tank.core import resource_path
 from tank.core.binding import AnsibleBinding
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
-from tank.core.utils import yaml_load, yaml_dump
+from tank.core.utils import yaml_load, yaml_dump, grep_dir
 
 
 class Run:
@@ -35,7 +36,7 @@ class Run:
 
         fs.ensure_dir_exists(cls._runs_dir(app))
 
-        temp_dir = tempfile.mkdtemp(prefix=run_id, dir=cls._runs_dir(app))
+        temp_dir = tempfile.mkdtemp(prefix='_{}'.format(run_id), dir=cls._runs_dir(app))
         cls._save_meta(temp_dir, testcase)
 
         # make a copy to make sure any alterations of the source won't affect us
@@ -44,6 +45,10 @@ class Run:
         os.rename(temp_dir, fs.join(cls._runs_dir(app), run_id))
 
         return cls(app, run_id)
+
+    @classmethod
+    def list_runs(cls, app):
+        return [cls(app, run_id) for run_id in grep_dir(cls._runs_dir(app), '^\d+$', isdir=True)]
 
 
     def __init__(self, app, run_id: str):
@@ -99,11 +104,44 @@ class Run:
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
-        raise NotImplementedError()
+        with self._lock:
+            sh.Command("ansible-playbook")(
+                "-f", "10", "-u", "root",
+                "-i", self._app.terraform_inventory_run_command,
+                "--extra-vars", self._ansible_extra_vars,
+                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
+                resource_path('ansible', 'play.yml'),
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+
+    def destroy(self):
+        with self._lock:
+            sh.Command(self._app.terraform_run_command)(
+                "destroy", "-auto-approve", "-parallelism=100",
+                self._tf_plan_dir,
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+
+            # atomic move before cleanup
+            temp_dir = fs.join(self.__class__._runs_dir(self._app), '_{}'.format(self.run_id))
+            os.rename(self._dir, temp_dir)
+
+        # cleanup with the lock released
+        rmtree(temp_dir)
+
 
     @property
     def meta(self) -> Dict:
         return dict(self._meta)
+
+    @property
+    def created_at(self) -> datetime:
+        return datetime.fromtimestamp(self.meta['created'])
+
+    @property
+    def testcase_copy(self) -> TestCase:
+        """
+        Copy of the original testcase.
+        """
+        return self._testcase
 
 
     @classmethod
@@ -118,8 +156,13 @@ class Run:
             'setup_id': uuid4().hex,
         })
 
+    @property
+    def _ansible_extra_vars(self) -> str:
+        a_vars = dict(('bc_{}'.format(k), v) for k, v in self._app.cloud_settings.ansible_vars.items())
+        return json.dumps(a_vars, sort_keys=True)
 
-    def _make_env(self):
+
+    def _make_env(self) -> Dict:
         fs.ensure_dir_exists(self._tf_data_dir)
         fs.ensure_dir_exists(self._log_dir)
 

@@ -22,7 +22,7 @@ provider "digitalocean" {
   {% if type == 'micro' %}
   size = "512mb"
   {% elif type == 'small' %}
-  size = "1536mb"
+  size = "2gb"
   {% elif type == 'standard' %}
   size = "4gb"
   {% elif type == 'large' %}
