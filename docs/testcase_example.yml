@@ -1,5 +1,14 @@
+# Blockchain binding name
+# Names of available bindings can be found at resources/bindings.yml
 binding: polkadot
 
+# Configuration of instances for the chosen binding
 instances:
-  boot: 1
+  boot: # this codename of the instance type will be included into the hostname
+    # optionally, you can customize instances
+    count: 1
+    # cloud-agnostic machine size
+    # available options: micro, small, standard, large, xlarge, xxlarge, huge
+    type: large
+
   producer: 3
