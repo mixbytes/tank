@@ -110,7 +110,7 @@ class Run:
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars,
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
-                resource_path('ansible', 'play.yml'),
+                resource_path('ansible', 'core.yml'),
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
     def destroy(self):
@@ -159,6 +159,11 @@ class Run:
     @property
     def _ansible_extra_vars(self) -> str:
         a_vars = dict(('bc_{}'.format(k), v) for k, v in self._app.cloud_settings.ansible_vars.items())
+
+        # including blockchain-specific part of the playbook
+        a_vars['blockchain_ansible_playbook'] = fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME,
+                                                        'tank', 'playbook.yml')
+
         return json.dumps(a_vars, sort_keys=True)
 
 
@@ -177,7 +182,7 @@ class Run:
         for k, v in self._app.cloud_settings.provider_vars.items():
             env["TF_VAR_{}".format(k)] = v
 
-        env["ANSIBLE_ROLES_PATH"] = fs.join(self._dir, "ansible_roles")
+        env["ANSIBLE_ROLES_PATH"] = self._roles_path
         env["ANSIBLE_CONFIG"] = resource_path('ansible', 'ansible.cfg')
 
         return env
@@ -212,4 +217,8 @@ class Run:
     @property
     def _log_dir(self) -> str:
         return fs.join(self._dir, 'log')
+
+    @property
+    def _roles_path(self) -> str:
+        return fs.join(self._dir, "ansible_roles")
 

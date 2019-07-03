@@ -56,7 +56,7 @@
 
 - name: "Install Docker and requirement packages"
   hosts: all
-  strategy: mitogen_free
+  #strategy: mitogen_free
   become: true
   gather_facts: smart
   roles:
@@ -72,7 +72,7 @@
 
 - name: Converge monitoring node
   hosts: "*monitoring*"
-  strategy: mitogen_free
+  #strategy: mitogen_free
   become: true
   gather_facts: smart
   vars:

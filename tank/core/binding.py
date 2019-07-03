@@ -19,6 +19,8 @@ class AnsibleBinding:
     """
     Ansible part of the binding.
     """
+    BLOCKCHAIN_ROLE_NAME = 'tank.blockchain'
+
     def __init__(self, app, binding_name: str):
         """
         Ctor.
@@ -42,7 +44,7 @@ class AnsibleBinding:
 
         result = {
             'src': conf['ansible']['src'],
-            'name': 'tank.blockchain',
+            'name': self.__class__.BLOCKCHAIN_ROLE_NAME,
         }
         if 'version' in conf['ansible']:
             result['version'] = conf['ansible']['version']
