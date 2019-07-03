@@ -1,6 +1,8 @@
 # MixBytes Tank
 
-**FIXME FIXME: OUTDATED**
+Current version can be bound at https://github.com/mixbytes/tank-polkadot
+
+**FIXME: OUTDATED**
 
 ### Requirements
 
