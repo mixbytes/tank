@@ -1,0 +1,57 @@
+---
+- name: Converge boot node
+  hosts: "*boot*"
+  become: true
+  vars:
+    bc_haya_comp_state_wallet: present
+    bc_haya_comp_state_boot: present
+    bc_haya_comp_state_bench: present
+    install_promstack: true
+    bc_haya_node_id: 0
+    bc_haya_plugin_randpa: present
+  roles:
+    - role: tank.blockchain
+
+- name: Converge producer node
+  hosts: "*producer*"
+  become: true
+  vars:
+    bc_haya_comp_state_prod: present
+    bc_haya_comp_state_bench: present
+    install_promstack: true
+    bc_polkadot_extra_validator_id: "{{ play_hosts.index(inventory_hostname) | int }}"
+    bc_haya_node_id: "{{ play_hosts.index(inventory_hostname) | int }}"
+    bc_haya_plugin_randpa: present
+  roles:
+    - role: tank.blockchain
+  tasks:
+    - name: "Show bc_haya_node_id"
+      tags:
+        - update
+      debug:
+        msg: "{{ bc_haya_node_id }}"
+
+- name: Converge full node
+  hosts: "*full*"
+  become: true
+  vars:
+    bc_haya_comp_state_prod: present
+    bc_haya_comp_state_bench: present
+    install_promstack: true
+    bcpeers_size: "{{ groups['bcpeers'] | length | int }}"
+    bc_haya_node_id: "{{ play_hosts.index(inventory_hostname) | int + 1 + bcpeers_size | int }}"
+    bc_haya_plugin_randpa: present
+    bc_haya_isproduction_enabled: "false"
+  roles:
+    - role: tank.blockchain
+  tasks:
+    - name: "Show bc_haya_node_id"
+      tags:
+        - update
+      debug:
+        msg: "{{ bc_haya_node_id }}"
+    - name: "Show bcpeers_size"
+      tags:
+        - update
+      debug:
+        msg: "{{ bcpeers_size }}"

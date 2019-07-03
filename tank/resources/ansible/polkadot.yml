@@ -1,0 +1,34 @@
+---
+- name: Converge boot node
+  hosts: "*boot*"
+  become: true
+  gather_facts: smart
+  vars:
+    bc_polkadot_comp_state_boot: present
+    bc_polkadot_comp_state_bench: present
+    install_promstack: true
+  roles:
+    - role: tank.blockchain
+  tasks:
+    - debug: msg="Bootstrap instance ready"
+      tags: [print_action]
+
+- name: Converge validator node
+  hosts: "*prod*"
+  become: true
+  gather_facts: smart
+  vars:
+    bc_polkadot_comp_state_prod: present
+    bc_polkadot_comp_state_bench: present
+    install_promstack: true
+    bc_polkadot_extra_validator_id: "{{ play_hosts.index(inventory_hostname) | int }}"
+  roles:
+    - role: tank.blockchain
+  tasks:
+    - name: "Show bc_polkadot_extra_validator_id"
+      tags:
+        - update
+      debug:
+        msg: "{{ bc_polkadot_extra_validator_id }}"
+    - debug: msg="Validator instance(s) ready"
+      tags: [print_action]
