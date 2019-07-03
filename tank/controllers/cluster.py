@@ -29,7 +29,7 @@ class Cluster(Controller):
             return [
                 run.run_id,
                 run.created_at.strftime('%c'),
-                run.testcase_copy.total_instances,
+                run.testcase_copy.total_instances + 1,
                 run.meta['testcase_filename']
             ]
 
