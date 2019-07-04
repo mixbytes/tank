@@ -14,6 +14,7 @@ from datetime import datetime
 import sh
 from cement import fs
 from filelock import FileLock
+import namesgenerator
 
 from tank.core import resource_path
 from tank.core.binding import AnsibleBinding
@@ -32,7 +33,7 @@ class Run:
     @classmethod
     def new_run(cls, app, testcase: TestCase):
         # TODO fancy names
-        run_id = str(int(time()))
+        run_id = namesgenerator.get_random_name()
 
         fs.ensure_dir_exists(cls._runs_dir(app))
 
@@ -48,7 +49,7 @@ class Run:
 
     @classmethod
     def list_runs(cls, app):
-        return [cls(app, run_id) for run_id in grep_dir(cls._runs_dir(app), '^\d+$', isdir=True)]
+        return [cls(app, run_id) for run_id in grep_dir(cls._runs_dir(app), '^[a-zA-Z0-9][a-zA-Z_0-9]*$', isdir=True)]
 
 
     def __init__(self, app, run_id: str):
