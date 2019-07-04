@@ -113,6 +113,36 @@ class Run:
                 resource_path('ansible', 'core.yml'),
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
+    def bench(self, tps: int, total_tx: int):
+        bench_command = 'bench --common-config=/tool/bench.config.json ' \
+                        '--module-config=/tool/polkadot.bench.config.json'
+        if tps is not None:
+            # FIXME extract blockchain_instances from inventory
+            # It's assumed, that every node is capable of running the bench.
+            per_node_tps = max(int(tps / self._testcase.total_instances), 1)
+            bench_command += ' --common.tps {}'.format(per_node_tps)
+
+        if total_tx is not None:
+            # FIXME extract blockchain_instances from inventory
+            # It's assumed, that every node is capable of running the bench.
+            per_node_tx = max(int(total_tx / self._testcase.total_instances), 1)
+            bench_command += ' --common.stopOn.processedTransactions {}'.format(per_node_tx)
+
+        # FIXME extract hostnames from inventory, but ignore monitoring
+        host_patterns = ','.join('*{}*'.format(name) for name in self._testcase.instances)
+
+        with self._lock:
+            env = self._make_env()
+
+        # The rest can go without the lock.
+        sh.Command("ansible")(
+            '-f', '100', '-B', '3600', '-P', '10', '-u', 'root',
+            '-i', self._app.terraform_inventory_run_command,
+            '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
+            host_patterns,
+            '-a', bench_command,
+            _env=env, _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+
     def destroy(self):
         with self._lock:
             sh.Command(self._app.terraform_run_command)(

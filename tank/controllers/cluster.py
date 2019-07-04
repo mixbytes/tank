@@ -66,6 +66,8 @@ class Cluster(Controller):
 
     @ex(help='Runs bench on prepared cluster',
         arguments=[
+            (['run_id'],
+             {'type': str, 'nargs': 1}),
             (['--tps'],
              {'help': 'set global transactions per second generation rate',
               'type': int}),
@@ -74,26 +76,7 @@ class Cluster(Controller):
               'type': int}),
         ])
     def bench(self):
-        raise NotImplementedError()
-        # bench_command = 'bench --common-config=/tool/bench.config.json ' \
-        #                 '--module-config=/tool/polkadot.bench.config.json'
-        # if self.app.pargs.tps:
-        #     # FIXME extract blockchain_instances from inventory
-        #     per_node_tps = max(int(self.app.pargs.tps / self.app.blockchain_instances), 1)
-        #     bench_command += ' --common.tps {}'.format(per_node_tps)
-        #
-        # if self.app.pargs.total_tx:
-        #     # FIXME extract blockchain_instances from inventory
-        #     per_node_tx = max(int(self.app.pargs.total_tx / self.app.blockchain_instances), 1)
-        #     bench_command += ' --common.stopOn.processedTransactions {}'.format(per_node_tx)
-        #
-        # check_call(['ansible', '-f', '100', '-B', '3600', '-P', '10', '-u', 'root',
-        #             '-i', self.app.terraform_inventory_run_command,
-        #             '--private-key', self.app.config.get(self.app.label, 'pvt_key'),
-        #             '*producer*',
-        #             '-a', bench_command],
-        #            cwd=self.app.terraform_plan_dir,
-        #            env=self.app.app_env)
+        Run(self.app, first(self.app.pargs.run_id)).bench(self.app.pargs.tps, self.app.pargs.total_tx)
 
     @ex(help='Destroy all instances of the cluster',
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])
