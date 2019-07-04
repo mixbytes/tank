@@ -118,13 +118,11 @@ class Run:
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'
         if tps is not None:
-            # FIXME extract blockchain_instances from inventory
             # It's assumed, that every node is capable of running the bench.
             per_node_tps = max(int(tps / self._testcase.total_instances), 1)
             bench_command += ' --common.tps {}'.format(per_node_tps)
 
         if total_tx is not None:
-            # FIXME extract blockchain_instances from inventory
             # It's assumed, that every node is capable of running the bench.
             per_node_tx = max(int(total_tx / self._testcase.total_instances), 1)
             bench_command += ' --common.stopOn.processedTransactions {}'.format(per_node_tx)

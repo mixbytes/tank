@@ -98,10 +98,6 @@ class MixbytesTank(App):
         return self._cloud_settings
 
     @property
-    def blockchain_instances(self) -> int:
-        return int(self.config.get(self.Meta.label, 'blockchain_instances'))
-
-    @property
     def terraform_run_command(self) -> str:
         return self.config.get(self.Meta.label, 'terraform_run_command')
 
