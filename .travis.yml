@@ -1,0 +1,24 @@
+dist: xenial
+
+sudo: false
+
+language: python
+
+matrix:
+  include:
+    - python: 3.7
+
+cache:
+  - pip
+
+script:
+  - echo 'OK'
+
+deploy:
+  - provider: pypi
+    user: alevkin
+    password:
+      secure: oPZIs+wNH36yfnNFBYGqDpg0Z14pmbMXW1A/0DwGtijz7ktRgjAkV+IEZDo/6xF1NgktDBUE8fiMepxhvlTOqkheoidmCEWW3Fip4RaybNpBg87m2iIHP6MyrTIOTPXn730n8M7aGHOy7/OPOkaik7L7pOvLuLLnGb4o5sXIJ6vPSD8KICjA9B9W1DfxAj/dnSnB2ca6iWUcGrOJwy5bDz9ZYPOvlTsXtFyWi6Yfog5F43/iRxICxz612xS0tcyEcQBvymwfJ6ZQAiyqCgt3KJHBX4vgzAKukY77t+1x5ImlpMk7tZ0fMnpkwtvwj2D8Sj54YoDF5kivsRX3UtX7Cl8fgqXrjixXhye5ARrxfSNk8mQ4IV9Iq8ZSTO/gs3T4oJDF29GD6JOPybLXsOGDW/rCg0giS56SWzImKkeoHVhrUUMdCuvPptvMrBmXy4jYzBtPoQhOhv3Q/D8nmDvfAL9abzWGFLAYQ3USaUNjCsMf0w0uZzMOhpL9jHPKb66OjMFQZOj0ZIuHPaVqJTakUIon0NMYGjLQZBgS4OIE/Bg76JlGTd9E4OEHJRw8plGqXhnRqNpBouQ7LwcrSVIzUSlRwErgVuyWCGACwxUTB/yOktfNPz5g/+IJViCZ4gFQqTkzltJ/3y1UlkYzsYrxKHVsD/F5EohgbdquYYgNyPI=
+    distributions: sdist bdist_wheel
+    on:
+      tags: true

@@ -1,0 +1,5 @@
+recursive-include *.py *.sh
+include setup.cfg
+include README.md CHANGELOG.md LICENSE
+include *.txt
+recursive-include tank/resources *

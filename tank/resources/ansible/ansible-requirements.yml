@@ -1,0 +1,7 @@
+- src: https://github.com/geerlingguy/ansible-role-docker
+  version: master
+  name: tank.docker
+
+- src: https://github.com/mixbytes/tank.ansible-promstack
+  version: master
+  name: mixbytes.promstack

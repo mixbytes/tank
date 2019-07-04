@@ -1,0 +1,93 @@
+---
+- name: Collect facts
+  hosts: all
+  become: true
+  gather_facts: smart
+  tasks:
+    - debug: msg="Fetching facts from cluster instances"
+      tags: [print_action]
+    - setup:
+
+- name: Create groups
+  hosts: localhost
+  gather_facts: false
+  vars:
+    bc_private_interface: enp0s8
+  tasks:
+    - debug: msg="Calculate"
+      tags: [print_action]
+    - name: "Add boot node to group bcboot"
+      tags:
+        - always
+      add_host:
+        name: "{{ item }}"
+        groups: bcboot
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"boot" in hostvars[item]["ansible_hostname"]'
+    - name: "Add all nodes to group bcpeers"
+      tags:
+        - always
+      add_host:
+        name: "{{ item }}"
+        groups: bcpeers
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"]'
+    - name: "Add monitnoring nodes to group monitoring_peer"
+      tags:
+        - always
+      register: _create_group_monitoring
+      add_host:
+        name: "{{ item }}"
+        groups: monitoring_peer
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"monitoring" in hostvars[item]["ansible_hostname"]'
+    - name: "Add all nodes to group allnodes"
+      tags:
+        - always
+      add_host:
+        name: "{{ item }}"
+        groups: allnodes
+        inventory_dir: "{{ hostvars[item].inventory_dir }}"
+      loop: "{{ groups['all'] }}"
+      when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"] or "full" in hostvars[item]["ansible_hostname"]'
+
+- name: "Install Docker and requirement packages"
+  hosts: all
+  #strategy: mitogen_free
+  become: true
+  gather_facts: smart
+  roles:
+    - role: tank.docker
+  tasks:
+    - name: "Install python packages"
+      apt:
+        name: python3-pip
+    - debug: msg="Docker Engine installed"
+      tags: [print_action]
+
+- import_playbook: "{{ blockchain_ansible_playbook }}"
+
+- name: Converge monitoring node
+  hosts: "*monitoring*"
+  #strategy: mitogen_free
+  become: true
+  gather_facts: smart
+  vars:
+    bc_polkadot_comp_state_monitoring: present
+    install_promstack: true
+    admin_user: tank
+    admin_password: tank
+  roles:
+    - role: tank.blockchain
+  tasks:
+    - name: Open grafana tcp port
+      ufw:
+        rule: allow
+        port: 3000
+      tags:
+        - firewall
+    - debug: msg="Metrics collector instance ready"
+      tags: [print_action]
