@@ -1,5 +1,6 @@
 # Blockchain binding name
 # Names of available bindings can be found at resources/bindings.yml
+# Binding names are not predefined, they just have to correspond to an entry in ~/.tank/bindings.yml
 binding: polkadot
 
 # Configuration of instances for the chosen binding

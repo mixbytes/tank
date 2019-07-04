@@ -1,3 +1,4 @@
+# Binding names are not predefined, you can introduce any bindings you feel suitable
 polkadot:
 
     # Ansible part of the binding
