@@ -3,7 +3,6 @@ from typing import Dict
 import pathlib
 
 import sh
-from tinydb import TinyDB
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
@@ -16,28 +15,16 @@ from tank.controllers.cluster import Cluster
 
 def _default_config() -> Dict:
     config = init_defaults('tank',
-                           'digitalocean',
                            'log.logging')
 
     config['tank'] = {
-        'state_file': '~/.tank/tank.json',
         'terraform_run_command': '/usr/local/bin/terraform',
         'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
     }
 
-    config['log.logging']['level'] = 'info'
+    config['log.logging']['level'] = 'WARNING'
 
     return config
-
-
-def extend_tinydb(app):
-    state_file = app.config.get('tank', 'state_file')
-    state_file = fs.abspath(state_file)
-    state_dir = os.path.dirname(state_file)
-    if not os.path.exists(state_dir):
-        os.makedirs(state_dir)
-
-    app.extend('state', TinyDB(state_file))
 
 
 class MixbytesTank(App):
@@ -84,7 +71,6 @@ class MixbytesTank(App):
 
         # register hooks
         hooks = [
-            ('post_setup', extend_tinydb),
         ]
 
 
