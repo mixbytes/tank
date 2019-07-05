@@ -10,6 +10,7 @@ from typing import Dict
 from uuid import uuid4
 import json
 from datetime import datetime
+from subprocess import DEVNULL
 
 import sh
 from cement import fs
@@ -32,7 +33,6 @@ class Run:
 
     @classmethod
     def new_run(cls, app, testcase: TestCase):
-        # TODO fancy names
         run_id = namesgenerator.get_random_name()
 
         fs.ensure_dir_exists(cls._runs_dir(app))
@@ -43,6 +43,7 @@ class Run:
         # make a copy to make sure any alterations of the source won't affect us
         testcase.save(fs.join(temp_dir, 'testcase.yml'))
 
+        # TODO prevent collisions
         os.rename(temp_dir, fs.join(cls._runs_dir(app), run_id))
 
         return cls(app, run_id)
@@ -105,16 +106,22 @@ class Run:
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
+        # including blockchain-specific part of the playbook
+        extra_vars = {
+            'blockchain_ansible_playbook':
+                fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'playbook.yml')
+        }
+
         with self._lock:
             sh.Command("ansible-playbook")(
                 "-f", "10", "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
-                "--extra-vars", self._ansible_extra_vars,
+                "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
                 resource_path('ansible', 'core.yml'),
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
-    def bench(self, tps: int, total_tx: int):
+    def bench(self, load_profile: str, tps: int, total_tx: int):
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'
         if tps is not None:
@@ -131,16 +138,26 @@ class Run:
         host_patterns = ','.join('*{}*'.format(name) for name in self._testcase.instances)
 
         with self._lock:
-            env = self._make_env()
+            # send the load_profile to the cluster
+            extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
 
-        # The rest can go without the lock.
-        sh.Command("ansible")(
-            '-f', '100', '-B', '3600', '-P', '10', '-u', 'root',
-            '-i', self._app.terraform_inventory_run_command,
-            '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
-            host_patterns,
-            '-a', bench_command,
-            _env=env, _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+            sh.Command("ansible-playbook")(
+                "-f", "10", "-u", "root",
+                "-i", self._app.terraform_inventory_run_command,
+                "--extra-vars", self._ansible_extra_vars(extra_vars),
+                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
+                "-t", "send_load_profile",
+                fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'send_load_profile.yml'),
+                _env=self._make_env(), _out=DEVNULL, _err=sys.stderr, _cwd=self._tf_plan_dir)
+
+            # run the bench
+            sh.Command("ansible")(
+                '-f', '100', '-B', '3600', '-P', '10', '-u', 'root',
+                '-i', self._app.terraform_inventory_run_command,
+                '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
+                host_patterns,
+                '-a', bench_command,
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
     def destroy(self):
         with self._lock:
@@ -185,13 +202,11 @@ class Run:
             'setup_id': uuid4().hex,
         })
 
-    @property
-    def _ansible_extra_vars(self) -> str:
+    def _ansible_extra_vars(self, extra: Dict = None) -> str:
         a_vars = dict(('bc_{}'.format(k), v) for k, v in self._app.cloud_settings.ansible_vars.items())
 
-        # including blockchain-specific part of the playbook
-        a_vars['blockchain_ansible_playbook'] = fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME,
-                                                        'tank', 'playbook.yml')
+        if extra is not None:
+            a_vars.update(extra)
 
         return json.dumps(a_vars, sort_keys=True)
 
@@ -205,7 +220,7 @@ class Run:
         env["TF_LOG_PATH"] = fs.join(self._log_dir, 'terraform.log')
         env["TF_DATA_DIR"] = self._tf_data_dir
         env["TF_VAR_state_path"] = self._tf_state_file
-        env["TF_VAR_blockchain_name"] = self._testcase.binding
+        env["TF_VAR_blockchain_name"] = self._testcase.binding.replace('_', '-')
         env["TF_VAR_setup_id"] = self._meta['setup_id']
 
         for k, v in self._app.cloud_settings.provider_vars.items():

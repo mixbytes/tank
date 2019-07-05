@@ -68,6 +68,8 @@ class Cluster(Controller):
         arguments=[
             (['run_id'],
              {'type': str, 'nargs': 1}),
+            (['load_profile'],
+             {'type': str, 'nargs': 1}),
             (['--tps'],
              {'help': 'set global transactions per second generation rate',
               'type': int}),
@@ -76,7 +78,8 @@ class Cluster(Controller):
               'type': int}),
         ])
     def bench(self):
-        Run(self.app, first(self.app.pargs.run_id)).bench(self.app.pargs.tps, self.app.pargs.total_tx)
+        Run(self.app, first(self.app.pargs.run_id)).bench(
+            first(self.app.pargs.load_profile), self.app.pargs.tps, self.app.pargs.total_tx)
 
     @ex(help='Destroy all instances of the cluster',
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])

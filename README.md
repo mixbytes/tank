@@ -72,10 +72,12 @@ tank cluster list
 ### 6. Create synthetic load
 
 ```shell
-tank cluster bench <run id> [--tps N] [--total-tx N]
+tank cluster bench <run id> <load profile js> [--tps N] [--total-tx N]
 ```
 
 `<run id>` - id of the run
+
+`<load profile js>` - js file with the load profile: custom logic which creates transactions to be sent to the cluster
 
 `--tps` - global transactions per second generation rate,
 
