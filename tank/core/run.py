@@ -50,6 +50,7 @@ class Run:
 
     @classmethod
     def list_runs(cls, app):
+        fs.ensure_dir_exists(cls._runs_dir(app))
         return [cls(app, run_id) for run_id in grep_dir(cls._runs_dir(app), '^[a-zA-Z0-9][a-zA-Z_0-9]*$', isdir=True)]
 
 
