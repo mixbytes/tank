@@ -115,7 +115,7 @@ class Run:
 
         with self._lock:
             sh.Command("ansible-playbook")(
-                "-f", "10", "-u", "root",
+                "-f", "30", "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
@@ -143,7 +143,7 @@ class Run:
             extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
 
             sh.Command("ansible-playbook")(
-                "-f", "10", "-u", "root",
+                "-f", "30", "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
@@ -153,7 +153,7 @@ class Run:
 
             # run the bench
             sh.Command("ansible")(
-                '-f', '100', '-B', '3600', '-P', '10', '-u', 'root',
+                '-f', '150', '-B', '3600', '-P', '10', '-u', 'root',
                 '-i', self._app.terraform_inventory_run_command,
                 '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
                 host_patterns,
