@@ -87,7 +87,7 @@ class Run:
         """
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
-                "apply", "-auto-approve", "-parallelism=100", self._tf_plan_dir,
+                "apply", "-auto-approve", "-parallelism=50", self._tf_plan_dir,
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def dependency(self):
@@ -115,8 +115,9 @@ class Run:
 
         with self._lock:
             sh.Command("ansible-playbook")(
-                "-f", "30", "-u", "root",
+                "-f", "50", "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
+                "-e", "_host_report=" + fs.join(self._dir, "ansible-hosts.txt"),
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
                 resource_path('ansible', 'core.yml'),

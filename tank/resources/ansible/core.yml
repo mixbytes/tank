@@ -53,10 +53,15 @@
         inventory_dir: "{{ hostvars[item].inventory_dir }}"
       loop: "{{ groups['all'] }}"
       when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"] or "full" in hostvars[item]["ansible_hostname"]'
+    - name: "Generate report"
+      template:
+        src: templates/ansible-hosts.txt.j2
+        dest: "{{ _host_report }}"
+      run_once: true
 
 - name: "Install Docker and requirement packages"
   hosts: all
-  #strategy: mitogen_free
+  # strategy: mitogen_free
   become: true
   gather_facts: smart
   roles:
@@ -72,7 +77,7 @@
 
 - name: Converge monitoring node
   hosts: "*monitoring*"
-  #strategy: mitogen_free
+  # strategy: mitogen_free
   become: true
   gather_facts: smart
   vars:
