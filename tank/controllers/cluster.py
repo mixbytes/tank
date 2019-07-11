@@ -8,7 +8,7 @@ from tabulate import tabulate
 from tank.core.exc import TankError
 from tank.core.run import Run
 from tank.core.testcase import TestCase
-from tank.core.lambdas import first
+from tank.core.lambdas import first, second
 
 
 class Cluster(Controller):
@@ -104,10 +104,7 @@ class Cluster(Controller):
         data = Run(self.app, first(self.app.pargs.run_id)).inspect()
 
         if info_type == 'hosts':
-            if 'cluster' not in data:
-                raise TankError('There are no information about hosts. Have you performed provision/deploy?')
-
-            print(tabulate([[ip, i['hostname']] for ip, i in data['cluster'].items()], headers=['IP', 'HOSTNAME']))
+            self._show_hosts(data)
 
     @ex(help='Create and setup a cluster (init, create, dependency, provision)',
         arguments=[(['testcase'], {'type': str, 'nargs': 1})])
@@ -120,3 +117,15 @@ class Cluster(Controller):
         run.create()
         run.dependency()
         run.provision()
+
+        self._show_hosts(run.inspect())
+        print('\nTank run id: {}'.format(run.run_id))
+
+
+    def _show_hosts(self, run_inspect_data):
+        if 'cluster' not in run_inspect_data:
+            raise TankError('There are no information about hosts. Have you performed provision/deploy?')
+
+        rows = sorted([[ip, i['hostname']] for ip, i in run_inspect_data['cluster'].items()], key=second)
+        print(tabulate(list(rows), headers=['IP', 'HOSTNAME']))
+
