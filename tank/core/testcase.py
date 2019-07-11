@@ -67,7 +67,7 @@ properties:
     instances:
         type: object
         propertyNames:
-            pattern: "^[A-Za-z_]+$"
+            pattern: "^[A-Za-z_]{1,28}$"
 
         additionalProperties:
         

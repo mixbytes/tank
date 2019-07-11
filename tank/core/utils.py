@@ -3,10 +3,10 @@
 #
 # Misc. utils.
 #
-
 import os
 import re
 import json
+import hashlib
 
 import yaml
 
@@ -24,6 +24,10 @@ def yaml_dump(filename: str, data):
 def json_load(filename: str):
     with open(filename) as fh:
         return json.load(fh)
+
+
+def sha256(bin_data) -> str:
+    return hashlib.sha256(bin_data).hexdigest()
 
 
 def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):

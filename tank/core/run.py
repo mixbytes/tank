@@ -21,7 +21,7 @@ from tank.core.binding import AnsibleBinding
 from tank.core.exc import TankError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
-from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load
+from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
 
 
 class Run:
@@ -217,7 +217,7 @@ class Run:
         yaml_dump(fs.join(run_dir, 'meta.yml'), {
             'testcase_filename': fs.abspath(testcase.filename),
             'created': int(time()),
-            'setup_id': uuid4().hex,
+            'setup_id': sha256(uuid4().bytes)[:12],
         })
 
     def _ansible_extra_vars(self, extra: Dict = None) -> str:
@@ -238,7 +238,7 @@ class Run:
         env["TF_LOG_PATH"] = fs.join(self._log_dir, 'terraform.log')
         env["TF_DATA_DIR"] = self._tf_data_dir
         env["TF_VAR_state_path"] = self._tf_state_file
-        env["TF_VAR_blockchain_name"] = self._testcase.binding.replace('_', '-')
+        env["TF_VAR_blockchain_name"] = self._testcase.binding.replace('_', '-')[:10]
         env["TF_VAR_setup_id"] = self._meta['setup_id']
 
         for k, v in self._app.cloud_settings.provider_vars.items():
