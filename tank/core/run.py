@@ -124,6 +124,19 @@ class Run:
                 resource_path('ansible', 'core.yml'),
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
+    def inspect(self):
+        with self._lock:
+            result = {
+                'meta': self.meta,
+                'testcase': self._testcase.content,
+            }
+
+            if os.path.exists(self._cluster_report_file):
+                with open(self._cluster_report_file) as fh:
+                    result['cluster'] = json.load(fh)
+
+        return result
+
     def bench(self, load_profile: str, tps: int, total_tx: int):
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'

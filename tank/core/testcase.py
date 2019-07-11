@@ -3,6 +3,7 @@
 #
 
 from typing import Dict
+from copy import deepcopy
 
 import yaml
 import jsonschema
@@ -44,6 +45,10 @@ class TestCase:
     @property
     def total_instances(self) -> int:
         return sum(cfg['count'] for cfg in self.instances.values())
+
+    @property
+    def content(self) -> Dict:
+        return deepcopy(self._content)
 
 
     _TESTCASE_SCHEMA = yaml.safe_load(r'''

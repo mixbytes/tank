@@ -1,7 +1,11 @@
 
+import sys
+import json
+
 from cement import Controller, ex
 from tabulate import tabulate
 
+from tank.core.exc import TankError
 from tank.core.run import Run
 from tank.core.testcase import TestCase
 from tank.core.lambdas import first
@@ -85,6 +89,25 @@ class Cluster(Controller):
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def destroy(self):
         Run(self.app, first(self.app.pargs.run_id)).destroy()
+
+    @ex(help='Low-level info about a run',
+        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
+    def inspect(self):
+        data = Run(self.app, first(self.app.pargs.run_id)).inspect()
+        json.dump(data, sys.stdout, indent=4, sort_keys=True)
+
+    @ex(help='Info about a run',
+        arguments=[(['info_type'], {'choices': ['hosts'], 'nargs': 1}),
+                   (['run_id'], {'type': str, 'nargs': 1})])
+    def info(self):
+        info_type = first(self.app.pargs.info_type)
+        data = Run(self.app, first(self.app.pargs.run_id)).inspect()
+
+        if info_type == 'hosts':
+            if 'cluster' not in data:
+                raise TankError('There are no information about hosts. Have you performed provision/deploy?')
+
+            print(tabulate([[ip, i['hostname']] for ip, i in data['cluster'].items()], headers=['IP', 'HOSTNAME']))
 
     @ex(help='Create and setup a cluster (init, create, dependency, provision)',
         arguments=[(['testcase'], {'type': str, 'nargs': 1})])
