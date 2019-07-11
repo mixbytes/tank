@@ -11,8 +11,6 @@
 - name: Create groups
   hosts: localhost
   gather_facts: false
-  vars:
-    bc_private_interface: enp0s8
   tasks:
     - debug: msg="Calculate"
       tags: [print_action]
@@ -53,11 +51,6 @@
         inventory_dir: "{{ hostvars[item].inventory_dir }}"
       loop: "{{ groups['all'] }}"
       when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"] or "full" in hostvars[item]["ansible_hostname"]'
-    - name: "Generate report"
-      template:
-        src: templates/ansible-hosts.txt.j2
-        dest: "{{ _host_report }}"
-      run_once: true
 
 - name: "Install Docker and requirement packages"
   hosts: all
@@ -96,3 +89,13 @@
         - firewall
     - debug: msg="Metrics collector instance ready"
       tags: [print_action]
+
+- name: Create cluster report
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Generate report"
+      template:
+        src: templates/ansible-report.json.j2
+        dest: "{{ _cluster_ansible_report }}"
+      run_once: true

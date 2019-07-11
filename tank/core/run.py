@@ -107,17 +107,18 @@ class Run:
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
-        # including blockchain-specific part of the playbook
         extra_vars = {
+            # including blockchain-specific part of the playbook
             'blockchain_ansible_playbook':
-                fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'playbook.yml')
+                fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'playbook.yml'),
+            # saving a report of the important cluster facts
+            '_cluster_ansible_report': self._cluster_report_file,
         }
 
         with self._lock:
             sh.Command("ansible-playbook")(
                 "-f", "50", "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
-                "-e", "_host_report=" + fs.join(self._dir, "ansible-hosts.txt"),
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
                 resource_path('ansible', 'core.yml'),
@@ -267,4 +268,8 @@ class Run:
     @property
     def _roles_path(self) -> str:
         return fs.join(self._dir, "ansible_roles")
+
+    @property
+    def _cluster_report_file(self) -> str:
+        return fs.join(self._dir, 'cluster_ansible_report.json')
 

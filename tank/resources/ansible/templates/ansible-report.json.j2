@@ -1,0 +1,9 @@
+{
+{% for i in groups["all"] %}
+  "{{ i }}": {
+    "hostname": "{{ hostvars[i].ansible_hostname }}",
+    "bench_present": {{ 'true' if hostvars[i]['bench_present'] | default(False) else 'false' }}
+  }
+  {% if not loop.last %},{% endif %}
+{% endfor %}
+}
