@@ -10,7 +10,6 @@ from typing import Dict
 from uuid import uuid4
 import json
 from datetime import datetime
-from subprocess import DEVNULL
 
 import sh
 from cement import fs
@@ -19,9 +18,10 @@ import namesgenerator
 
 from tank.core import resource_path
 from tank.core.binding import AnsibleBinding
+from tank.core.exc import TankError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
-from tank.core.utils import yaml_load, yaml_dump, grep_dir
+from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load
 
 
 class Run:
@@ -132,8 +132,7 @@ class Run:
             }
 
             if os.path.exists(self._cluster_report_file):
-                with open(self._cluster_report_file) as fh:
-                    result['cluster'] = json.load(fh)
+                result['cluster'] = self._cluster_report()
 
         return result
 
@@ -151,7 +150,10 @@ class Run:
             bench_command += ' --common.stopOn.processedTransactions {}'.format(per_node_tx)
 
         # FIXME extract hostnames from inventory, but ignore monitoring
-        host_patterns = ','.join('*{}*'.format(name) for name in self._testcase.instances)
+        ips = [ip for ip, i in self._cluster_report().items() if i['bench_present']]
+        if not ips:
+            raise TankError('There are no nodes capable of running the bench util')
+        host_patterns = ','.join(ips)
 
         with self._lock:
             # send the load_profile to the cluster
@@ -252,6 +254,9 @@ class Run:
         Generation of Terraform manifests specific for this run and user preferences.
         """
         PlanGenerator(self._app, self._testcase).generate(self._tf_plan_dir)
+
+    def _cluster_report(self):
+        return json_load(self._cluster_report_file)
 
 
     @property

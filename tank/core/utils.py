@@ -6,6 +6,7 @@
 
 import os
 import re
+import json
 
 import yaml
 
@@ -18,6 +19,11 @@ def yaml_load(filename: str):
 def yaml_dump(filename: str, data):
     with open(filename, 'w') as fh:
         return yaml.dump(data, fh, default_flow_style=False)
+
+
+def json_load(filename: str):
+    with open(filename) as fh:
+        return json.load(fh)
 
 
 def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):
