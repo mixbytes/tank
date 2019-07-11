@@ -150,7 +150,7 @@ class Run:
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
                 "-t", "send_load_profile",
                 fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'send_load_profile.yml'),
-                _env=self._make_env(), _out=DEVNULL, _err=sys.stderr, _cwd=self._tf_plan_dir)
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
             # run the bench
             sh.Command("ansible")(
