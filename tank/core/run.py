@@ -221,7 +221,8 @@ class Run:
         })
 
     def _ansible_extra_vars(self, extra: Dict = None) -> str:
-        a_vars = dict(('bc_{}'.format(k), v) for k, v in self._app.cloud_settings.ansible_vars.items())
+        a_vars = dict(('bc_{}'.format(k), str(v)) for k, v in self._app.cloud_settings.ansible_vars.items())
+        a_vars.update(dict(('bc_{}'.format(k), str(v)) for k, v in self._testcase.ansible.items()))
 
         if extra is not None:
             a_vars.update(extra)

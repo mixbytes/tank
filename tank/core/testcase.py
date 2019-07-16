@@ -50,6 +50,10 @@ class TestCase:
     def content(self) -> Dict:
         return deepcopy(self._content)
 
+    @property
+    def ansible(self) -> Dict:
+        return dict(self._content.get('ansible', dict()))
+
 
     _TESTCASE_SCHEMA = yaml.safe_load(r'''
 type: object
@@ -81,4 +85,11 @@ properties:
                   properties:
                       count: {type: integer, minimum: 0}
                       type: {enum: ["micro", "small", "standard", "large", "xlarge", "xxlarge", "huge"]}
+    
+    ansible:
+        type: object
+        additionalProperties:
+            oneOf:
+                - {type: integer}
+                - {type: string}
     ''')
