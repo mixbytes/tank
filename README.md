@@ -3,11 +3,9 @@
 MixBytes Tank is a console tool which can set up a blockchain cluster in minutes in a cloud and bench it using various transaction loads.
 It'll highlight problems of the blockchain and give insights into performance and stability of the technology.
 
-At the moment supported blockchains are [Haya](https://github.com/mixbytes/haya) and [Polkadot](https://polkadot.network).
+At the moment, supported blockchains are [Haya](https://github.com/mixbytes/haya) and [Polkadot](https://polkadot.network).
 
-Supported cloud providers are DigitalOcean and Google Compute Engine.
-
-Setup - bench - dispose workflow is very similar to a test case, that is why a configuration of such run is described in a declarative YAML file called testcase.
+Setup - bench - dispose workflow is very similar to a test case, that is why configuration of such run is described in a declarative YAML file called "testcase".
 
 More info can be found at:
 
@@ -17,7 +15,7 @@ More info can be found at:
 
 Contributions are welcomed!
 
-Discuss at https://t.me/MixBytes.
+Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
 
 
 # Quick guide
