@@ -30,33 +30,11 @@ Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
 
 ### Terraform & Terraform-Inventory
 
-Can be done with [tank/install-terraform.sh](tank/install-terraform.sh) on Debian-like Linux systems.
+Can be done with [tank/install-terraform.sh](tank/install-terraform.sh) on Debian-like Linux systems (will require `sudo`).
 
 Alternatively, the mentioned terraform* requirements can be manually downloaded and unpacked to the `/usr/local/bin` directory.
 
 In the next release this process will be automated.
-
-### Optional: create virtualenv
-
-Optionally, create and activate virtualenv (assuming `venv` is a directory of newly created virtualenv)
-
-Linux:
-```shell
-sudo apt-get install -y python3-virtualenv
-python3 -m virtualenv -p python3 venv
-```
-
-MacOS:
-```shell
-pip3 install virtualenv
-python3 -m virtualenv -p python3 venv
-```
-
-After virtualenv creation and each time after opening a terminal, activate virtualenv to work with the tank:
-
-```shell
-. venv/bin/activate
-```
 
 ### Tank
 ```shell
