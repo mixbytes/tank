@@ -118,6 +118,8 @@ A binding provides an ansible role to deploy the blockchain and javascript code 
 Similarly, typically a database uses bindings to provide APIs to programming languages.
 
 You shouldn't worry about writing or understanding a binding unless you want to add support of some blockchain to Tank.
+A binding consists of an Ansible part (some examples [here](https://github.com/mixbytes?utf8=✓&q=tank.ansible&type=&language=)) 
+and a js part [examples here](https://github.com/mixbytes?utf8=✓&q=tank.bench&type=&language=).
 
 A binding is specified in a straightforward way, by its name, e.g.: `binding: polkadot`.
 
@@ -135,21 +137,43 @@ Each variable will be prefixed with `bc_` before being passed to Ansible.
 
 ## Usage
 
-### 3. Start a tank run
+### Start a Tank run
 
+Deploy a new cluster via
 ```shell
 tank cluster deploy <testcase file>
 ```
 
-As a result, the listing of the instances of the cluster will be printed along with the run id.
+This command will create a cluster dedicated to the specified test case.
+Such clusters are named runs in the Tank's terminology.
+There can be multiple coexisting runs on a developer's machine.
+Any changes to the testcase made after the `deploy` command start won't affect the run.
 
-### 4. Login into the monitoring
+After the command is finished, you will see a listing of cluster machines and a run id, e.g.:
 
-Locate the IP address of the newly created instance which name ends with `-monitoring`.
-Open in a browser `http://{monitoring ip}:3000/dashboards`, username and password are `tank`.
-Metrics from the cluster can be seen in the predefined dashboards.
+```shell
+IP             HOSTNAME
+-------------  -------------------------------------
+167.71.36.223  tank-polkadot-db2d81e031a1-boot-0
+167.71.36.231  tank-polkadot-db2d81e031a1-monitoring
+167.71.36.222  tank-polkadot-db2d81e031a1-producer-0
+165.22.74.160  tank-polkadot-db2d81e031a1-producer-1
 
-### 5. List current active runs
+Tank run id: festive_lalande
+```
+
+Locate an IP corresponding to a hostname ending with `-monitoring` - thats where all the metrics are (see below).
+
+The cluster is up and running at this moment.
+You can see its' state in dashboards or query the cluster information via `info` and `inspect` commands (see below).
+
+### Login into the monitoring
+
+Open in a browser `http://{the monitoring ip from the previous step}:3000/dashboards`, username and password are `tank`.
+
+Metrics from the cluster can be seen in the predefined dashboards or queried at `http://{the monitoring ip}:3000/explore`.
+
+### Current active runs
 
 There can be multiple tank runs at the same time. The runs list and the brief information about each run can be seen via: 
 
@@ -157,21 +181,48 @@ There can be multiple tank runs at the same time. The runs list and the brief in
 tank cluster list
 ```
 
-### 6. Create synthetic load
+### Information about a run
+
+To list hosts of a cluster type
+
+```shell
+tank cluster info hosts {run id here}
+```
+
+To get detailed cluster info type
+
+```shell
+tank cluster inspect {run id here}
+```
+
+### Synthetic load
+
+Tank can run a load profile coded in javascript on the cluster. 
 
 ```shell
 tank cluster bench <run id> <load profile js> [--tps N] [--total-tx N]
 ```
 
-`<run id>` - id of the run
+`<run id>` - id of the run,
 
-`<load profile js>` - js file with the load profile: custom logic which creates transactions to be sent to the cluster
+`<load profile js>` - js file with the load profile: custom logic which creates transactions to be sent to the cluster,
 
 `--tps` - global transactions per second generation rate,
 
 `--total-tx` - how many transactions to send (total).
 
-### 7. Shutdown and remove the cluster
+In the simplest case a developer writes logic to create and send transaction and 
+Tank takes care of distributing and running the code, providing the requested tps.
+
+You can bench the same cluster with different load profiles by providing different arguments to the bench subcommand.
+The documentation on profile development can be found at [https://github.com/mixbytes/tank.bench-common](https://github.com/mixbytes/tank.bench-common#what-is-profile). 
+
+Binding parts responsible for benching can be found [here](https://github.com/mixbytes?utf8=✓&q=tank.bench&type=&language=).
+Examples of load profiles can be found in `profileExamples` subfolders, e.g. [https://github.com/mixbytes/tank.bench-polkadot/tree/master/profileExamples](https://github.com/mixbytes/tank.bench-polkadot/tree/master/profileExamples).
+
+### Shutdown and remove a cluster
+
+Entire Tank data of a particular run (both in the cloud and on the developer's machine) will be irreversibly deleted:
 
 ```shell
 tank cluster destroy <run id>
