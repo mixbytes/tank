@@ -1,5 +1,25 @@
 # MixBytes Tank
 
+MixBytes Tank is a console tool which can set up a blockchain cluster in minutes in a cloud and bench it using various transaction loads.
+It'll highlight blockchain problems and give insights into performance and stability of the technology.
+
+At the moment, supported blockchains are [Haya](https://github.com/mixbytes/haya) and [Polkadot](https://polkadot.network).
+
+Setup - bench - dispose workflow is very similar to a test case, that is why configuration of such run is described in a declarative YAML file called "testcase".
+
+More info can be found at:
+
+* [Guide](docs/guide/README.md)
+* [Cookbook](docs/cookbook/README.md)
+* Quick guide below
+
+Contributions are welcomed!
+
+Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
+
+
+# Quick guide
+
 ## Requirements
 
 - Python3
@@ -10,22 +30,11 @@
 
 ### Terraform & Terraform-Inventory
 
-Can be done with [tank/install-terraform.sh](tank/install-terraform.sh).
+To install, run [tank/install-terraform.sh](tank/install-terraform.sh) on Debian-like Linux systems (`sudo` is required).
 
-### Optional: create virtualenv
+Alternatively, the mentioned terraform* requirements can be manually downloaded and unpacked to the `/usr/local/bin` directory.
 
-Optionally, create and activate virtualenv
-
-```shell
-sudo apt-get install -y python3-virtualenv
-python3 -m virtualenv -p python3 venv
-```
-
-After virtualenv creation and each time after opening a terminal, activate virtualenv to work with the tank:
-
-```shell
-. venv/bin/activate
-```
+This process will be automated in the next release.
 
 ### Tank
 ```shell
@@ -41,7 +50,7 @@ Configure `~/.tank.yml`. The example can be found at [docs/config.yml.example](d
 
 Please configure at least one cloud provider. The essential steps are:
 * providing (and possibly creating) a key pair;
-* registering the public key with your cloud provider if needed;
+* registering a public key with your cloud provider (if needed);
 * specifying a cloud provider access token or credentials.
 
 ### 2. Create or get a tank testcase
@@ -54,16 +63,17 @@ The example can be found at [docs/testcase_example.yml](docs/testcase_example.ym
 tank cluster deploy <testcase file>
 ```
 
-### 4. Login into the monitoring
+As a result, the cluster instance listing will be printed along with the run id.
 
-Locate the newly created instance which name ends with `-monitoring` in your cloud, find the instance ip.
-Open in browser `http://{monitoring ip}:3000/dashboards`, username and password are `tank`.
+### 4. Log in to the monitoring
 
-The dashboards can always be found at `http://{monitoring ip}:3000/dashboards`
+Locate the IP-address of the newly-created instance which name ends with `-monitoring`.
+Open `http://{monitoring ip}:3000/dashboards` in your browser, type in “tank” in username and password fields.
+You will see cluster metrics in the predefined dashboards.
 
 ### 5. List current active runs
 
-There can be multiple tank runs at the same time. List and brief information can be seen via: 
+There can be multiple tank runs at the same time. The runs list and brief information about each run can be seen via: 
 
 ```shell
 tank cluster list
@@ -75,23 +85,16 @@ tank cluster list
 tank cluster bench <run id> <load profile js> [--tps N] [--total-tx N]
 ```
 
-`<run id>` - id of the run
+`<run id>` - run ID
 
-`<load profile js>` - js file with the load profile: custom logic which creates transactions to be sent to the cluster
+`<load profile js>` - a js file with a load profile: custom logic which creates transactions to be sent to the cluster
 
-`--tps` - global transactions per second generation rate,
+`--tps` - total number of generated transactions per second,
 
-`--total-tx` - how many transactions to send (total).
+`--total-tx` - total number of transactions to be sent.
 
 ### 7. Shutdown and remove the cluster
 
 ```shell
 tank cluster destroy <run id>
 ```
-
-
-## Hacking
-
-### Alternative binding version
-
-Bindings can be configured at `~/.tank/bindings.yml` (by default the predefined binding config is copied and used).
