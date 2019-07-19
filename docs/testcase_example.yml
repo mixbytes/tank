@@ -13,3 +13,11 @@ instances:
     type: large
 
   producer: 3
+
+
+# Optional low-level kung fu: passing ansible variables to the binding used.
+# Make sure you know what you're doing.
+ansible:
+  # Each variable will be passed to ansible as -e bc_{var_name}={value}.
+  # Any variable can be specified.
+  path_general: /lol
