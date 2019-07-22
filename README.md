@@ -49,9 +49,9 @@ pip3 install mixbytes-tank
 Configure `~/.tank.yml`. The example can be found at [docs/config.yml.example](docs/config.yml.example).
 
 Please configure at least one cloud provider. The essential steps are:
-* providing (and possibly creating) a key pair;
-* registering a public key with your cloud provider (if needed);
-* specifying a cloud provider access token or credentials.
+* providing (and possibly creating) a key pair
+* registering a public key with your cloud provider (if needed)
+* specifying a cloud provider access token or credentials
 
 ### 2. Create or get a tank testcase
 

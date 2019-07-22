@@ -61,9 +61,9 @@ The user config contains cloud provider configurations, pointer to the current c
 #### Cloud provider configuration
 
 Please configure at least one cloud provider. The essential steps are:
-* providing (and possibly creating) a key pair;
-* registering a public key with your cloud provider (if needed);
-* specifying a cloud provider access token or credentials.
+* providing (and possibly creating) a key pair
+* registering a public key with your cloud provider (if needed)
+* specifying a cloud provider access token or credentials
 
 We recommend creating a distinct key pair for benchmarking purposes.
 The key must not be protected with a passphrase.
@@ -108,7 +108,7 @@ A Tank testcase describes a benchmark scenario.
 
 The example can be found at [docs/testcase_example.yml](../testcase_example.yml).
 
-Principal testcase contents are a current blockchain binding name and configuration of instances.
+Principal testcase contents are a current blockchain binding name and the configuration of instances.
 
 #### Blockchain binding
 
