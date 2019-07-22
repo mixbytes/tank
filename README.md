@@ -104,4 +104,11 @@ tank cluster destroy <run id>
 
 ## Branching
 
-features -> development -> master.
+features -> `development` -> `master`.
+
+`master` is production-ready code.
+
+`development` is expected-to-be production-ready code which is merged into master after thorough testing
+(so, no faulty code in `development` pls).
+
+`development` and `master` branches are permanent.
