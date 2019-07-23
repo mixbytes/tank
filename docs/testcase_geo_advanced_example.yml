@@ -1,0 +1,23 @@
+binding: polkadot
+
+# Configuration of instances for the chosen binding
+instances:
+  boot:
+    count: 1
+    type: large
+
+  producer:
+    regions:
+      Europe: 4
+
+      Asia:
+        count: 3
+        type: standard
+        # percent of packets lost
+        # the option can be specified on the instances level, per instance role, per region
+        packetloss: 20
+
+      NorthAmerica: 3
+
+    # you still can provide the count, it has to match sum of counts by region
+    # count: 10

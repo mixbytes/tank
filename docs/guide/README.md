@@ -106,7 +106,7 @@ Note: these options affect only Tank logging. Terraform and Ansible won't be aff
 
 A Tank testcase describes a benchmark scenario.
 
-The example can be found at [docs/testcase_example.yml](../testcase_example.yml).
+The simple example can be found at [docs/testcase_example.yml](../testcase_example.yml).
 
 Principal testcase contents are a current blockchain binding name and configuration of instances.
 
@@ -117,15 +117,110 @@ A binding provides an ansible role to deploy the blockchain (some examples [here
 and javascript code - to create load in the cluster ([examples here](https://github.com/mixbytes?utf8=✓&q=tank.bench&type=&language=)).
 Similarly, databases use bindings to provide APIs to programming languages.
 
+A binding is specified by its name, e.g.:
+```yaml
+binding: polkadot
+```
+
 You shouldn't worry about writing or understanding a binding unless you want to add support of some blockchain to Tank.
 
-A binding is specified by its name, e.g.: `binding: polkadot`.
+#### Blockchain instances
 
-A blockchain cluster consists of a number of different instance roles, e.g. fullnodes and miners/validators.
+A blockchain cluster consists of a number of different *instance roles*, e.g. fullnodes and miners/validators.
 Available roles depend on the binding used.
-For each instance role you can specify a number of instances (0 by default) and an instance type, which is a cloud-agnostic machine size.
 
-##### Ansible variables forwarding
+A *blockchain instances configuration* is a set of *role configurations*.
+E.g., in the simplest case:
+
+```yaml
+instances:
+  boot: 1
+  producer: 3
+```
+
+##### role configuration
+
+A *role configuration* is a number in the simplest case. The number specifies how many servers to set up with this role installed.
+
+```yaml
+instances:
+  producer: 3
+```
+
+Alternatively, a role configuration can be written as an object with various options - generally applicable and role configuration-specific.
+
+```yaml
+instances:
+  boot:
+    count: 1
+```
+
+* An option `count` specifies how many servers to set up with this role installed.
+
+* An option `regions` sets a *region configuration* for the role configuration.
+
+##### region configuration
+
+A region configuration provides *region options* per a region name.
+
+In the simplest case, a region configuration says how many role instances to set up per region:
+
+```yaml
+instances:
+  producer:
+    regions:
+      Europe: 4
+      Asia: 3
+      NorthAmerica: 3
+```
+
+A region name is one of the following: `Europe`, `Asia`, `NorthAmerica`, `random`, `default`.
+
+`Europe`, `Asia`, `NorthAmerica` region names are self-explanatory.
+
+`default` region is a synonym for default region used by Tank.
+
+`random` region says that instances must be distributed evenly across available regions.
+
+Region names are cloud provider-agnostic and can be configured in `~/.tank/regions.yml` (by default the predefined region config is copied and used at the moment of the first run creation).
+
+In the common case a *region options* can be written as a set of various options - generally applicable and region-specific.
+
+* `count` region option specifies how many servers to set up into the region.
+
+##### Generally applicable options
+
+Generally applicable options can be specified in the number of contexts: *instances*, *role configuration*, *region configuration*.
+
+More local contexts has higher precedence over wrapping contextes,
+e.g. an option specified in a role configuration takes precedence over the same option specified on the `instances` level:
+
+```yaml
+instances:
+  type: standard
+
+  boot:
+    count: 1
+    type: large
+
+  producer:
+    regions:
+      random: 10
+```
+
+The options are:
+
+* `type` - an instance type, which is a cloud-agnostic machine size.
+Available types: micro (~1 GB mem), small (~2 GB mem), standard (4GB), large (8GB), xlarge (16GB), xxlarge (32GB), huge (64GB)
+* `packetloss` - simulates bad network operation - percent of packets lost
+
+##### Instance configuration examples
+
+The simple geographically distributed test case - [docs/testcase_geo_example.yml](../testcase_geo_example.yml).
+
+An example utilizing generally applicable options and a region configuration - [docs/testcase_geo_advanced_example.yml](../testcase_geo_advanced_example.yml).
+
+#### Ansible variables forwarding
 
 There is a way to pass some Ansible variables from a testcase to a cluster.
 This low-level feature can be used to tailor the blockchain for a particular test case.

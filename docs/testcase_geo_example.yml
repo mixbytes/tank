@@ -1,0 +1,11 @@
+binding: polkadot
+
+# Configuration of instances for the chosen binding
+instances:
+  boot:
+    count: 1
+    type: large
+
+  producer:
+    regions:
+      random: 10
