@@ -73,11 +73,9 @@ class MixbytesTank(App):
         hooks = [
         ]
 
-
     def __init__(self):
         super().__init__()
         self._cloud_settings = None
-
 
     def setup(self):
         super(MixbytesTank, self).setup()
@@ -108,7 +106,6 @@ class MixbytesTank(App):
     @property
     def user_dir(self) -> str:
         return fs.abspath(fs.join(pathlib.Path.home(), '.tank'))
-
 
     def _check_terraform_availability(self):
         try:
