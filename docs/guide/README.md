@@ -67,6 +67,7 @@ Please configure at least one cloud provider. The essential steps are:
 
 We recommend creating a distinct key pair for benchmarking purposes.
 The key must not be protected with a passphrase.
+Make sure that the permissions of the private key are 0600 or 0400 (i.e. the private key is not accessible by anyone except the owner).
 The simplest way is:
 
 ```shell
