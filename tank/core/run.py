@@ -229,7 +229,6 @@ class Run:
 
         return json.dumps(a_vars, sort_keys=True)
 
-
     def _make_env(self) -> Dict:
         fs.ensure_dir_exists(self._tf_data_dir)
         fs.ensure_dir_exists(self._log_dir)
@@ -291,4 +290,3 @@ class Run:
     @property
     def _cluster_report_file(self) -> str:
         return fs.join(self._dir, 'cluster_ansible_report.json')
-
