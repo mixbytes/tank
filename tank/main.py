@@ -10,7 +10,7 @@ from cement.utils import fs
 from tank.core.cloud_settings import CloudUserSettings
 from tank.core.exc import TankError
 from tank.controllers.base import Base
-from tank.controllers.cluster import Cluster
+from tank.controllers.cluster import NestedCluster, EmbeddedCluster
 
 
 def _default_config() -> Dict:
@@ -67,18 +67,17 @@ class MixbytesTank(App):
         # register handlers
         handlers = [
             Base,
-            Cluster
+            EmbeddedCluster,
+            NestedCluster,
         ]
 
         # register hooks
         hooks = [
         ]
 
-
     def __init__(self):
         super().__init__()
         self._cloud_settings = None
-
 
     def setup(self):
         super(MixbytesTank, self).setup()
