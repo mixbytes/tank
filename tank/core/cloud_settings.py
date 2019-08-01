@@ -47,12 +47,7 @@ class CloudUserSettings:
         if self.provider is None:
             raise TankConfigError('Cloud provider is not specified or not known')
 
-        _default_monitoring_vars = {
-            "admin_user": "tank",
-            "admin_password": "tank"
-        }
-        self.monitoring_vars = app_config.get_dict()['tank'].get('monitoring', _default_monitoring_vars)
-
+        self.monitoring_vars = app_config.get_dict()['tank'].get('monitoring')
         try:
             jsonschema.validate(self.monitoring_vars, self.__class__._MONITORING_SCHEMA)
         except jsonschema.ValidationError as e:

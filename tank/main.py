@@ -22,6 +22,11 @@ def _default_config() -> Dict:
         'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
     }
 
+    config['tank']['monitoring'] = {
+        "admin_user": "tank",
+        "admin_password": "tank"
+    }
+
     config['log.logging']['level'] = 'WARNING'
 
     return config
