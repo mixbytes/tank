@@ -18,8 +18,8 @@ def _default_config() -> Dict:
                            'log.logging')
 
     config['tank'] = {
-        'terraform_run_command': '/usr/local/bin/terraform',
-        'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
+        'terraform_run_command': 'terraform',
+        'terraform_inventory_run_command': 'terraform-inventory',
     }
 
     config['log.logging']['level'] = 'WARNING'
