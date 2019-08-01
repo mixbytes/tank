@@ -262,7 +262,8 @@ You can see its state on the dashboards or query cluster information via `info` 
 
 ### Log in to the monitoring
 
-Open `http://{the monitoring ip from the previous step}:3000/dashboards` in your browser, type in “tank” in username and password fields.
+Open `http://{monitoring ip}:3000/dashboards` in your browser, type `monitoring` options from your `/.tank.yml` configuration file in username and password fields.
+If you didn't define these options in your configuration file, type 'tank' in username and password fields.
 You will see cluster metrics in the predefined dashboards.
 You can query the metrics at `http://{the monitoring ip}:3000/explore`.
 
