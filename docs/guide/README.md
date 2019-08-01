@@ -263,7 +263,7 @@ You can see its state on the dashboards or query cluster information via `info` 
 ### Log in to the monitoring
 
 Tank uses ***grafana*** to visualise benchmark metrics. In order to access your ***grafana*** dashboard open `http://{monitoring ip}:3000/dashboards` in your browser. Access to dashboard requires entering ***grafana*** username and password.
-***Grafana*** username and password should be defined by user in `monitoring` option of the `tank` section in your `/.tank.yml` configuration file.
+***Grafana*** username and password can be defined by user in `monitoring` option of the `tank` section in your `/.tank.yml` configuration file.
 If you did not define these variables in your configuration file, type 'tank' in username and password fields.
 You will see cluster metrics in the predefined dashboards.
 You can query the metrics at `http://{the monitoring ip}:3000/explore`.
