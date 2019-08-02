@@ -1,3 +1,4 @@
+import logging.config
 import os
 from typing import Dict
 import pathlib
@@ -11,6 +12,7 @@ from tank.core.cloud_settings import CloudUserSettings
 from tank.core.exc import TankError
 from tank.controllers.base import Base
 from tank.controllers.cluster import NestedCluster, EmbeddedCluster
+from tank.logging_conf import build_logging_conf
 
 
 def _default_config() -> Dict:
@@ -131,9 +133,12 @@ class MixbytesTankTest(TestApp, MixbytesTank):
 
 def main():
     with MixbytesTank() as app:
+        logs_dir = os.path.join(app.user_dir, 'logs')
+        logging.config.dictConfig(build_logging_conf(logs_dir=logs_dir))
+
         try:
-            app._check_terraform_availability()
-            app._check_terraform_inventory_availability()
+            # app._check_terraform_availability()
+            # app._check_terraform_inventory_availability()
             app.run()
 
         except TankError as e:
