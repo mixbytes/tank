@@ -21,7 +21,7 @@ from tank.core.binding import AnsibleBinding
 from tank.core.exc import TankError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
-from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
+from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256, check_file_rights
 
 
 class Run:
@@ -85,6 +85,8 @@ class Run:
         """
         Create instances for the cluster.
         """
+        check_file_rights(self._app.cloud_settings.provider_vars['pvt_key'], '600')
+
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
                 "apply", "-auto-approve", "-parallelism=50", self._tf_plan_dir,
@@ -107,6 +109,9 @@ class Run:
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
+        pvt_key = self._app.cloud_settings.provider_vars['pvt_key']
+        check_file_rights(pvt_key, '600')
+
         extra_vars = {
             # including blockchain-specific part of the playbook
             'blockchain_ansible_playbook':
@@ -120,7 +125,7 @@ class Run:
                 "-f", "50", "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
-                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
+                "--private-key={}".format(pvt_key),
                 resource_path('ansible', 'core.yml'),
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
@@ -137,6 +142,8 @@ class Run:
         return result
 
     def bench(self, load_profile: str, tps: int, total_tx: int):
+        check_file_rights(self._app.cloud_settings.provider_vars['pvt_key'], '600')
+
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'
         if tps is not None:

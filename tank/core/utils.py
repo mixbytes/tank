@@ -10,6 +10,8 @@ import hashlib
 
 import yaml
 
+from tank.core.exc import TankConfigError
+
 
 def yaml_load(filename: str):
     with open(filename) as fh:
@@ -44,3 +46,13 @@ def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):
         contents = filter(lambda name: os.path.isdir(os.path.join(dirname, name)), contents)
 
     return contents
+
+
+def check_file_rights(file: str, mode: str):
+    file_stat: os.stat_result = os.stat(file)
+
+    # oct(file_stat.st_mode) returns '0o100XXX' <- last three numbers under X show file's permission mask
+    file_mode = oct(file_stat.st_mode)[-3:]
+
+    if file_mode != mode:
+        raise TankConfigError(f'File {file} has wrong permission mask - {file_mode}. Should be {mode}.')
