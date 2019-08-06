@@ -2,7 +2,7 @@ tank:
   # cloud provider to use
   provider: digitalocean
   ansible:
-    forks: 40
+    forks: 40  # number of parallel processes to use during cluster provisioning
 
 digitalocean:
   # Private key to manage benchmark instances.
