@@ -5,6 +5,7 @@
 #
 import os
 import re
+import stat
 import json
 import hashlib
 
@@ -48,11 +49,18 @@ def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):
     return contents
 
 
-def check_file_rights(file: str, mode: str):
-    file_stat: os.stat_result = os.stat(file)
+def check_file_rights(file):
+    """
+    Checks whether file has only owner permissions
+    """
+    # oct -'0o77', bin - '0b000111111', which is the same as ----rwxrwx
+    NOT_OWNER_PERMISSION = stat.S_IRWXG + stat.S_IRWXO
 
-    # oct(file_stat.st_mode) returns '0o100XXX' <- last three numbers under X show file's permission mask
-    file_mode = oct(file_stat.st_mode)[-3:]
+    # oct - '0o400', bin - '0b100000000', which is the same as -r--------
+    ONLY_OWNER_PERMISSION = stat.S_IRUSR
 
-    if file_mode != mode:
-        raise TankConfigError(f'File {file} has wrong permission mask - {file_mode}. Should be {mode}.')
+    file_stat: os.stat_result = os.stat(file)    
+    file_mode = stat.S_IMODE(file_stat.st_mode)
+
+    if (file_mode & NOT_OWNER_PERMISSION != 0) or (file_mode & ONLY_OWNER_PERMISSION == 0):
+        raise TankConfigError(f'File {file} has wrong permission mask - {oct(file_mode)[2:]}.')

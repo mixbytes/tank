@@ -85,7 +85,7 @@ class Run:
         """
         Create instances for the cluster.
         """
-        check_file_rights(self._app.cloud_settings.provider_vars['pvt_key'], '600')
+        check_file_rights(self._app.cloud_settings.provider_vars['pvt_key'])
 
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
@@ -110,7 +110,7 @@ class Run:
 
     def provision(self):
         pvt_key = self._app.cloud_settings.provider_vars['pvt_key']
-        check_file_rights(pvt_key, '600')
+        check_file_rights(pvt_key)
 
         extra_vars = {
             # including blockchain-specific part of the playbook
@@ -142,7 +142,7 @@ class Run:
         return result
 
     def bench(self, load_profile: str, tps: int, total_tx: int):
-        check_file_rights(self._app.cloud_settings.provider_vars['pvt_key'], '600')
+        check_file_rights(self._app.cloud_settings.provider_vars['pvt_key'])
 
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'
