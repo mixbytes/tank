@@ -22,6 +22,7 @@ from tank.core.exc import TankError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
 from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
+from tank.terraform_installer import TerraformInstaller, TerraformInventoryInstaller
 
 
 class Run:
@@ -57,6 +58,10 @@ class Run:
     def __init__(self, app, run_id: str):
         self._app = app
         self.run_id = run_id
+
+        # install terraform and terraform-inventory
+        TerraformInstaller(storage_path=app.user_dir).install()
+        TerraformInventoryInstaller(storage_path=app.user_dir).install()
 
         self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
         self._meta = yaml_load(fs.join(self._dir, 'meta.yml'))

@@ -1,5 +1,11 @@
+import os
+
+
 def build_logging_conf(logs_dir: str) -> dict:
     """Builds dict logging config."""
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+
     logging_conf = {
         'version': 1,
         'disable_existing_loggers': False,
@@ -19,7 +25,7 @@ def build_logging_conf(logs_dir: str) -> dict:
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'DEBUG',
                 'formatter': 'simple',
-                'filename': logs_dir,  # TODO build with user_dir()
+                'filename': logs_dir,
                 'maxBytes': 10 * 1024 * 1024,  # 10 MB
                 'backupCount': 3,
                 'encoding': 'utf8',
@@ -28,7 +34,7 @@ def build_logging_conf(logs_dir: str) -> dict:
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'ERROR',
                 'formatter': 'simple',
-                'filename': logs_dir,  # TODO build with user_dir()
+                'filename': logs_dir,
                 'maxBytes': 10 * 1024 * 1024,  # 10 MB
                 'backupCount': 3,
                 'encoding': 'utf8',

@@ -1,7 +1,10 @@
 import os
+import stat
 import sys
 import zipfile
 from urllib.request import urlopen
+
+import sh
 
 
 class BaseInstaller(object):  # TODO add logging
@@ -10,7 +13,7 @@ class BaseInstaller(object):  # TODO add logging
     1. Download ZIP archive.
     2. Unzip it.
     3. Remove ZIP file.
-    4. Move directory to another /usr/local/bin/ as default.
+    4. Move file to storage_path directory.
     """
 
     version: str
@@ -21,11 +24,23 @@ class BaseInstaller(object):  # TODO add logging
     def __init__(self, storage_path: str):
         """Build archive full path."""
         self._storage_path = storage_path
+        if not os.path.exists(storage_path):
+            os.makedirs(storage_path)
+
         self._archive_full_path = os.path.join(storage_path, self.archive_name)
         self._file_full_path = os.path.join(storage_path, self.file_name)
 
+    def _is_installed(self) -> bool:
+        """Returns True if tool is installed else False."""
+        try:
+            sh.Command(self._file_full_path)
+            return True
+        except sh.CommandNotFound:
+            return False
+
     def _download_archive(self):
         """Download archive from provided url."""
+        print('Downloading archive...')
         response = urlopen(self.url)
 
         with open(self._archive_full_path, 'wb') as archive_file:
@@ -50,24 +65,34 @@ class BaseInstaller(object):  # TODO add logging
         os.remove(self._archive_full_path)
         print('Archive has been removed.')
 
-    def _add_variables(self):
-        """Add variables to $PATH and app.app_env."""
-        path_variable = os.environ['PATH']
-        if path_variable:
-            os.environ['PATH'] = os.pathsep.join([path_variable, self._storage_path])
-        else:
-            os.environ['PATH'] = self._storage_path
+    def _make_executable(self):
+        """Makes file executable."""
+        file_stat = os.stat(self._file_full_path)
+        os.chmod(self._file_full_path, file_stat.st_mode | stat.S_IEXEC)
 
-        print('Variables have been added to $PATH and app.app_env.')
+    def _add_variables(self):
+        """Add variables to $PATH."""
+        path_variable = os.environ.get('PATH', '')
+        paths = path_variable.split(os.pathsep)
+
+        if self._storage_path not in paths:
+            if path_variable:
+                os.environ['PATH'] = os.pathsep.join([path_variable, self._storage_path])
+            else:
+                os.environ['PATH'] = self._storage_path
+
+        print('Variable has been added to $PATH.')
 
     def install(self):
         """Installation logic is here."""
-        if not os.path.exists(self._file_full_path):
+        if not self._is_installed():
+            print('Installing {name}...'.format(name=self.file_name))
             self._download_archive()
             self._unpack_archive()
             self._remove_archive()
+            self._make_executable()
         else:
-            print('{name} already exists.'.format(name=self.file_name))
+            print('{name} is already installed.'.format(name=self.file_name))
 
         self._add_variables()  # TODO check exist
 
@@ -93,5 +118,6 @@ class TerraformInventoryInstaller(BaseInstaller):
 
 
 if __name__ == '__main__':
-    TerraformInstaller('/home/alexei/.tank').install()
-    # TerraformInventoryInstaller().install()
+    default_directory = '~/.tank'
+    TerraformInstaller(default_directory).install()
+    TerraformInventoryInstaller(default_directory).install()

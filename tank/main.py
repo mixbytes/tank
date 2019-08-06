@@ -110,19 +110,6 @@ class MixbytesTank(App):
     def user_dir(self) -> str:
         return fs.abspath(fs.join(pathlib.Path.home(), '.tank'))
 
-    def _check_terraform_availability(self):
-        try:
-            sh.Command(self.terraform_run_command, "--version")
-        except Exception:
-            raise TankError("Error calling Terraform at '{}'".format(self.terraform_run_command))
-
-    def _check_terraform_inventory_availability(self):
-        try:
-            sh.Command(self.terraform_inventory_run_command, "-version")
-        except Exception:
-            raise TankError("Error calling Terraform Inventory at '{}'".format(
-                self.terraform_inventory_run_command))
-
 
 class MixbytesTankTest(TestApp, MixbytesTank):
     """A sub-class of MixbytesTank that is better suited for testing."""
@@ -137,8 +124,6 @@ def main():
         logging.config.dictConfig(build_logging_conf(logs_dir=logs_dir))
 
         try:
-            # app._check_terraform_availability()
-            # app._check_terraform_inventory_availability()
             app.run()
 
         except TankError as e:
