@@ -1,6 +1,8 @@
 tank:
   # cloud provider to use
   provider: digitalocean
+  ansible:
+    forks: 40
 
 digitalocean:
   # Private key to manage benchmark instances.
