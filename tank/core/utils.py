@@ -5,13 +5,10 @@
 #
 import os
 import re
-import stat
 import json
 import hashlib
 
 import yaml
-
-from tank.core.exc import TankConfigError
 
 
 def yaml_load(filename: str):
@@ -47,20 +44,3 @@ def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):
         contents = filter(lambda name: os.path.isdir(os.path.join(dirname, name)), contents)
 
     return contents
-
-
-def check_file_rights(file):
-    """
-    Checks whether file has only owner permissions
-    """
-    # oct -'0o77', bin - '0b000111111', which is the same as ----rwxrwx
-    NOT_OWNER_PERMISSION = stat.S_IRWXG + stat.S_IRWXO
-
-    # oct - '0o400', bin - '0b100000000', which is the same as -r--------
-    ONLY_OWNER_PERMISSION = stat.S_IRUSR
-
-    file_stat: os.stat_result = os.stat(file)    
-    file_mode = stat.S_IMODE(file_stat.st_mode)
-
-    if (file_mode & NOT_OWNER_PERMISSION != 0) or (file_mode & ONLY_OWNER_PERMISSION == 0):
-        raise TankConfigError(f'File {file} has wrong permission mask - {oct(file_mode)[2:]}.')
