@@ -7,13 +7,15 @@ from urllib.request import urlopen
 import sh
 
 
-class BaseInstaller(object):  # TODO add logging
+class BaseInstaller(object):
     """Base installer.
 
     1. Download ZIP archive.
     2. Unzip it.
     3. Remove ZIP file.
     4. Move file to storage_path directory.
+    5. Make file executable
+    6. Add variable to $PATH
     """
 
     version: str
@@ -118,6 +120,6 @@ class TerraformInventoryInstaller(BaseInstaller):
 
 
 if __name__ == '__main__':
-    default_directory = '~/.tank'
+    default_directory = os.path.join(os.path.expanduser('~'), '.tank')
     TerraformInstaller(default_directory).install()
     TerraformInventoryInstaller(default_directory).install()

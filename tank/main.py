@@ -3,7 +3,6 @@ import os
 from typing import Dict
 import pathlib
 
-import sh
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
@@ -13,6 +12,9 @@ from tank.core.exc import TankError
 from tank.controllers.base import Base
 from tank.controllers.cluster import NestedCluster, EmbeddedCluster
 from tank.logging_conf import build_logging_conf
+
+
+logger = logging.getLogger(__name__)
 
 
 def _default_config() -> Dict:

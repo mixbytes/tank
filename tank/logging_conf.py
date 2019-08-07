@@ -25,7 +25,7 @@ def build_logging_conf(logs_dir: str) -> dict:
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'DEBUG',
                 'formatter': 'simple',
-                'filename': logs_dir,
+                'filename': os.path.join(logs_dir, 'info.log'),
                 'maxBytes': 10 * 1024 * 1024,  # 10 MB
                 'backupCount': 3,
                 'encoding': 'utf8',
@@ -34,7 +34,7 @@ def build_logging_conf(logs_dir: str) -> dict:
                 'class': 'logging.handlers.RotatingFileHandler',
                 'level': 'ERROR',
                 'formatter': 'simple',
-                'filename': logs_dir,
+                'filename': os.path.join(logs_dir, 'error.log'),
                 'maxBytes': 10 * 1024 * 1024,  # 10 MB
                 'backupCount': 3,
                 'encoding': 'utf8',
