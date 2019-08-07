@@ -96,7 +96,7 @@ class BaseInstaller(object):
         else:
             print('{name} is already installed.'.format(name=self.file_name))
 
-        self._add_variables()  # TODO check exist
+        self._add_variables()
 
 
 class TerraformInstaller(BaseInstaller):
