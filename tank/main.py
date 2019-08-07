@@ -14,16 +14,17 @@ from tank.controllers.cluster import NestedCluster, EmbeddedCluster
 
 
 def _default_config() -> Dict:
-    config = init_defaults('tank',
-                           'log.logging')
+    config = init_defaults('tank', 'log.logging')
 
     config['tank'] = {
         'terraform_run_command': '/usr/local/bin/terraform',
         'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
+        'ansible': {
+            'forks': 50,
+        },
     }
 
     config['log.logging']['level'] = 'WARNING'
-
     return config
 
 
@@ -107,6 +108,11 @@ class MixbytesTank(App):
     @property
     def user_dir(self) -> str:
         return fs.abspath(fs.join(pathlib.Path.home(), '.tank'))
+
+    @property
+    def ansible_config(self) -> dict:
+        """Return dict with ansible parameters."""
+        return self.config.get(self.Meta.label, 'ansible')
 
     def _check_terraform_availability(self):
         try:

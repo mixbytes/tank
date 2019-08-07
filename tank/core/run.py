@@ -117,7 +117,8 @@ class Run:
 
         with self._lock:
             sh.Command("ansible-playbook")(
-                "-f", "50", "-u", "root",
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
@@ -160,7 +161,8 @@ class Run:
             extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
 
             sh.Command("ansible-playbook")(
-                "-f", "30", "-u", "root",
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
