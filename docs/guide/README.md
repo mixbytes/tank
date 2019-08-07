@@ -236,6 +236,10 @@ Deploy a new cluster via
 ```shell
 tank cluster deploy <testcase file>
 ```
+or
+```shell
+tank run <testcase file>
+```
 
 This command will create a cluster dedicated to the specified test case.
 Such clusters are named *runs* in Tank terminology.
