@@ -60,8 +60,9 @@ class Run:
         self.run_id = run_id
 
         # install terraform and terraform-inventory
-        TerraformInstaller(storage_path=app.user_dir).install()
-        TerraformInventoryInstaller(storage_path=app.user_dir).install()
+        installation_directory = os.path.join(app.user_dir, 'bin')
+        TerraformInstaller(storage_path=installation_directory).install()
+        TerraformInventoryInstaller(storage_path=installation_directory).install()
 
         self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
         self._meta = yaml_load(fs.join(self._dir, 'meta.yml'))

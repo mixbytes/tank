@@ -120,6 +120,6 @@ class TerraformInventoryInstaller(BaseInstaller):
 
 
 if __name__ == '__main__':
-    default_directory = os.path.join(os.path.expanduser('~'), '.tank')
+    default_directory = os.path.join(os.path.expanduser('~'), '.tank', 'bin')
     TerraformInstaller(default_directory).install()
     TerraformInventoryInstaller(default_directory).install()
