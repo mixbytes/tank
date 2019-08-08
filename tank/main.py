@@ -28,6 +28,11 @@ def _default_config() -> Dict:
         },
     }
 
+    config['tank']['monitoring'] = {
+        "admin_user": "tank",
+        "admin_password": "tank"
+    }
+
     config['log.logging']['level'] = 'WARNING'
     return config
 

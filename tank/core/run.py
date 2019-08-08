@@ -124,6 +124,9 @@ class Run:
                 fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'playbook.yml'),
             # saving a report of the important cluster facts
             '_cluster_ansible_report': self._cluster_report_file,
+            # grafana monitoring login/password
+            'monitoring_user_login': self._app.cloud_settings.monitoring_vars['admin_user'],
+            'monitoring_user_password': self._app.cloud_settings.monitoring_vars['admin_password'],
         }
 
         with self._lock:

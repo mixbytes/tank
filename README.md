@@ -68,7 +68,7 @@ As a result, the cluster instance listing will be printed along with the run id.
 ### 4. Log in to the monitoring
 
 Locate the IP-address of the newly-created instance which name ends with `-monitoring`.
-Open `http://{monitoring ip}:3000/dashboards` in your browser, type in “tank” in username and password fields.
+Open `http://{monitoring ip}:3000/dashboards` in your browser, type in 'tank' in username and password fields.
 You will see cluster metrics in the predefined dashboards.
 
 ### 5. List current active runs
