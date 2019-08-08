@@ -22,6 +22,7 @@ from tank.core.exc import TankError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
 from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
+from tank.terraform_installer import TerraformInstaller, TerraformInventoryInstaller
 
 
 class Run:
@@ -57,6 +58,11 @@ class Run:
     def __init__(self, app, run_id: str):
         self._app = app
         self.run_id = run_id
+
+        # install terraform and terraform-inventory
+        installation_directory = os.path.join(app.user_dir, 'bin')
+        TerraformInstaller(storage_path=installation_directory).install()
+        TerraformInventoryInstaller(storage_path=installation_directory).install()
 
         self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
         self._meta = yaml_load(fs.join(self._dir, 'meta.yml'))
@@ -120,7 +126,8 @@ class Run:
 
         with self._lock:
             sh.Command("ansible-playbook")(
-                "-f", "50", "-u", "root",
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
@@ -163,7 +170,8 @@ class Run:
             extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
 
             sh.Command("ansible-playbook")(
-                "-f", "30", "-u", "root",
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),

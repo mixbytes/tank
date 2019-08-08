@@ -1,6 +1,8 @@
 tank:
   # cloud provider to use
   provider: digitalocean
+  ansible:
+    forks: 40  # number of parallel processes to use during cluster provisioning
   # Optional. Login and password for access to monitoring
   monitoring:
     admin_user: "your_login"

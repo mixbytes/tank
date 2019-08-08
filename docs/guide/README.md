@@ -11,11 +11,8 @@
 
 ### Terraform & Terraform-Inventory
 
-To install, run [tank/install-terraform.sh](../../tank/install-terraform.sh) on Debian-like Linux systems (`sudo` is required).
-
-Alternatively, the mentioned terraform* requirements can be manually downloaded and unpacked to the `/usr/local/bin` directory.
-
-In the next release this process will be automated.
+You don't need to worry about installation of these tools.
+Everything will be installed to `~/.tank` directory automatically when `Run` object will be created.
 
 ### Optional: create virtualenv
 
@@ -235,6 +232,10 @@ Each variable will be prefixed with `bc_` before being passed to Ansible.
 Deploy a new cluster via
 ```shell
 tank cluster deploy <testcase file>
+```
+or
+```shell
+tank run <testcase file>
 ```
 
 This command will create a cluster dedicated to the specified test case.

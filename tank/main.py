@@ -1,8 +1,8 @@
+import logging.config
 import os
 from typing import Dict
 import pathlib
 
-import sh
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
@@ -11,15 +11,21 @@ from tank.core.cloud_settings import CloudUserSettings
 from tank.core.exc import TankError
 from tank.controllers.base import Base
 from tank.controllers.cluster import NestedCluster, EmbeddedCluster
+from tank.logging_conf import build_logging_conf
+
+
+logger = logging.getLogger(__name__)
 
 
 def _default_config() -> Dict:
-    config = init_defaults('tank',
-                           'log.logging')
+    config = init_defaults('tank', 'log.logging')
 
     config['tank'] = {
-        'terraform_run_command': '/usr/local/bin/terraform',
-        'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
+        'terraform_run_command': 'terraform',
+        'terraform_inventory_run_command': 'terraform-inventory',
+        'ansible': {
+            'forks': 50,
+        },
     }
 
     config['tank']['monitoring'] = {
@@ -28,7 +34,6 @@ def _default_config() -> Dict:
     }
 
     config['log.logging']['level'] = 'WARNING'
-
     return config
 
 
@@ -113,18 +118,10 @@ class MixbytesTank(App):
     def user_dir(self) -> str:
         return fs.abspath(fs.join(pathlib.Path.home(), '.tank'))
 
-    def _check_terraform_availability(self):
-        try:
-            sh.Command(self.terraform_run_command, "--version")
-        except Exception:
-            raise TankError("Error calling Terraform at '{}'".format(self.terraform_run_command))
-
-    def _check_terraform_inventory_availability(self):
-        try:
-            sh.Command(self.terraform_inventory_run_command, "-version")
-        except Exception:
-            raise TankError("Error calling Terraform Inventory at '{}'".format(
-                self.terraform_inventory_run_command))
+    @property
+    def ansible_config(self) -> dict:
+        """Return dict with ansible parameters."""
+        return self.config.get(self.Meta.label, 'ansible')
 
 
 class MixbytesTankTest(TestApp, MixbytesTank):
@@ -136,9 +133,10 @@ class MixbytesTankTest(TestApp, MixbytesTank):
 
 def main():
     with MixbytesTank() as app:
+        logs_dir = os.path.join(app.user_dir, 'logs')
+        logging.config.dictConfig(build_logging_conf(logs_dir=logs_dir))
+
         try:
-            app._check_terraform_availability()
-            app._check_terraform_inventory_availability()
             app.run()
 
         except TankError as e:
