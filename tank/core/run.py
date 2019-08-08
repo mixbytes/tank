@@ -3,6 +3,7 @@
 #
 import os
 import sys
+import stat
 import tempfile
 from shutil import rmtree
 from time import time
@@ -18,7 +19,7 @@ import namesgenerator
 
 from tank.core import resource_path
 from tank.core.binding import AnsibleBinding
-from tank.core.exc import TankError
+from tank.core.exc import TankError, TankConfigError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
 from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
@@ -91,6 +92,8 @@ class Run:
         """
         Create instances for the cluster.
         """
+        self._check_private_key_permissions()
+
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
                 "apply", "-auto-approve", "-parallelism=50", self._tf_plan_dir,
@@ -113,6 +116,8 @@ class Run:
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
+        self._check_private_key_permissions()
+
         extra_vars = {
             # including blockchain-specific part of the playbook
             'blockchain_ansible_playbook':
@@ -144,6 +149,8 @@ class Run:
         return result
 
     def bench(self, load_profile: str, tps: int, total_tx: int):
+        self._check_private_key_permissions()
+
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'
         if tps is not None:
@@ -266,6 +273,18 @@ class Run:
     def _cluster_report(self):
         return json_load(self._cluster_report_file)
 
+    def _check_private_key_permissions(self):
+        """
+        Checks whether groups and others have 0 access to private key
+        """
+        # oct -'0o77', bin - '0b000111111', which is the same as ----rwxrwx
+        NOT_OWNER_PERMISSION = stat.S_IRWXG + stat.S_IRWXO
+
+        file_stat: os.stat_result = os.stat(self._app.cloud_settings.provider_vars['pvt_key'])
+        file_mode = stat.S_IMODE(file_stat.st_mode)
+
+        if file_mode & NOT_OWNER_PERMISSION != 0:
+            raise TankConfigError('Private key has wrong permission mask.')
 
     @property
     def _dir(self) -> str:
