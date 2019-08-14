@@ -21,9 +21,6 @@ def _default_config() -> Dict:
     config = init_defaults('tank', 'log.logging')
 
     config['tank'] = {
-        # TODO explore problems with path in $PATH variable
-        'terraform_run_command': os.path.join(os.path.expanduser('~'), '.tank', 'bin', 'terraform'),
-        'terraform_inventory_run_command': os.path.join(os.path.expanduser('~'), '.tank', 'bin', 'terraform-inventory'),
         'ansible': {
             'forks': 50,
         },
@@ -92,6 +89,18 @@ class MixbytesTank(App):
     def setup(self):
         super(MixbytesTank, self).setup()
         fs.ensure_dir_exists(self.user_dir)
+
+        additional_config_defaults = {
+            'tank': {
+                'terraform_run_command': os.path.join(self.installation_dir, 'terraform'),
+                'terraform_inventory_run_command': os.path.join(self.installation_dir, 'terraform-inventory'),
+            },
+        }
+
+        for section, variables_dict in additional_config_defaults.items():
+            for key, value in variables_dict.items():
+                if key not in self.config.keys(section):
+                    self.config.set(section, key, value)
 
     @property
     def app_env(self) -> Dict:
