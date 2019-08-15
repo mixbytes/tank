@@ -66,6 +66,8 @@
     - debug: msg="Docker Engine installed"
       tags: [print_action]
 
+- import_playbook: common.yml
+
 - import_playbook: "{{ blockchain_ansible_playbook }}"
 
 - name: Converge monitoring node

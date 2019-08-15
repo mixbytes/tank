@@ -1,0 +1,19 @@
+- name: Converge monitoring node
+  hosts: "*monitoring*"
+  become: true
+  vars:
+    bc_private_interface: "eth0"
+    lsyncd_master_hostname: "{{ groups['monitoring_peer'] | map('extract', hostvars, ['ansible_'+bc_private_interface, 'ipv4', 'address']) | list | join('') }}"
+    lsyncd_slave_hosts: "{{ groups['allnodes'] | map('extract', hostvars, ['ansible_hostname']) | list }}"
+  roles:
+    - role: tank.ansible-core
+
+- name: Converge boot node
+  hosts: "all"
+  become: true
+  vars:
+    bc_private_interface: "eth0"
+    lsyncd_master_hostname: "{{ groups['monitoring_peer'] | map('extract', hostvars, ['ansible_'+bc_private_interface, 'ipv4', 'address']) | list | join('') }}"
+    lsyncd_slave_hosts: "{{ groups['allnodes'] | map('extract', hostvars, ['ansible_'+bc_private_interface, 'ipv4', 'address']) | list }}"
+  roles:
+    - role: tank.ansible-core
