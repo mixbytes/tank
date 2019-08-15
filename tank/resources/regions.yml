@@ -1,0 +1,11 @@
+digitalocean:
+  Europe: FRA1
+  Asia: SGP1
+  NorthAmerica: NYC1
+  default: FRA1
+
+gce:
+  Europe: europe-west4
+  Asia: asia-northeast1
+  NorthAmerica: us-east4
+  default: europe-west4
