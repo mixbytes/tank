@@ -3,13 +3,16 @@
 variable "token" {}
 variable "pvt_key" {}
 variable "ssh_fingerprint" {}
+variable "scripts_path" {}
 
 # test case-specific settings
 variable "blockchain_name" {}
 
 # run-specific settings
 variable "setup_id" {}
-
+variable "tank_region" {
+        default = "fra1"
+}
 
 provider "digitalocean" {
   version = "~> 1.1"
@@ -48,7 +51,7 @@ resource "digitalocean_droplet" "tank-{{ name }}" {
     {{ machine_type(instance_cfg.type) }}
 
 {% raw %}
-    region = "fra1"
+    region = "${var.tank_region}"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
@@ -61,7 +64,19 @@ resource "digitalocean_droplet" "tank-{{ name }}" {
   }
   provisioner "remote-exec" {
     inline = [
-      "export PATH=$PATH:/usr/bin",
+      "mkdir -p /etc/ansible/facts.d",
+      "echo '${var.tank_region}' > /etc/ansible/facts.d/region.txt",
+      "echo 'fake_standard' > /etc/ansible/facts.d/type.txt",
+      "echo 'fake_producer' > /etc/ansible/facts.d/role.txt",
+    ]
+  }
+  provisioner "file" {
+    source      = "${var.scripts_path}/tank_meta.fact"
+    destination = "/etc/ansible/facts.d/tank_meta.fact"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /etc/ansible/facts.d/tank_meta.fact",
     ]
   }
 }
@@ -78,7 +93,7 @@ resource "digitalocean_droplet" "tank-monitoring" {
   {{ machine_type(monitoring_machine_type) }}
 {% raw %}
 
-    region = "fra1"
+    region = "${var.tank_region}"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"

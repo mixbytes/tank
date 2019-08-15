@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+region=$(cat /etc/ansible/facts.d/region.txt)
+type=$(cat /etc/ansible/facts.d/type.txt)
+role=$(cat /etc/ansible/facts.d/role.txt)
+
+cat <<EOF
+{
+ "region" : "$region",
+ "type" : "$type",
+ "role" : "$role"
+}
+EOF
