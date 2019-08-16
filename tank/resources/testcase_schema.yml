@@ -7,7 +7,7 @@ required:
 definitions:
   count:
     type: integer
-    minumum: 0
+    minimum: 1  # count must by greater than 0
 
   type:
     type: string
@@ -46,7 +46,7 @@ definitions:
     type: object
 
     properties:
-      count: {$ref: "#definitions/count"}
+      count: {$ref: "#/definitions/count"}
       regions: {$ref: "#/definitions/regions"}
       type: {$ref: "#/definitions/type"}
 
