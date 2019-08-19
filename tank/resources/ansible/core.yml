@@ -101,3 +101,17 @@
         src: templates/ansible-report.json.j2
         dest: "{{ _cluster_ansible_report }}"
       run_once: true
+
+- name: Setting up packetloss
+  hosts: "all"
+  tasks:
+    - name: Install packetloss script
+      template:
+        src: templates/set-packetloss.j2
+        dest: "/usr/local/bin/set-packetloss"
+        mode: 0755
+    - name: Schedule applying iptables rules
+      at:
+        command: "/usr/local/bin/set-packetloss add 0.00"
+        count: 3
+        units: minutes
