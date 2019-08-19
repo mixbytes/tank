@@ -112,6 +112,6 @@
         mode: 0755
     - name: Schedule applying iptables rules
       at:
-        command: "/usr/local/bin/set-packetloss add 0.00"
+        command: "/usr/local/bin/set-packetloss add {{ tank['packetloss'][ansible_local['tank_meta']['region']] | default('0.0') }}"
         count: 3
         units: minutes
