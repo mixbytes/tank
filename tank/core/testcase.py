@@ -1,6 +1,8 @@
 #
 #   module tank.core.testcase
 #
+import copy
+
 from jsonschema import Draft4Validator, ValidationError
 
 from tank.core import resource_path
@@ -25,40 +27,66 @@ class InstancesDict(dict):
 
     _GENERAL_OPTIONS = {
         'type': 'small',
+        # 'packetloss': 0,
     }
 
     def __init__(self, content: dict):
+        """Load content and defaults."""
         super().__init__(content)
         self._global_defaults = self._load_defaults()
 
     def _load_defaults(self) -> dict:
+        """Provide defaults for config.
+
+        Now they are default region and type.
+        """
         defaults = dict()
 
-        for option, default in self._GENERAL_OPTIONS:
+        for option, default in self._GENERAL_OPTIONS.items():
             defaults[option] = self.get(option, default)
-            self.pop(option)
+            if option in self.keys():
+                self.pop(option)
 
         defaults['region'] = 'default'
         return defaults
 
-    def _canonize(self):
+    def canonize(self) -> dict:
+        """Convert to canonized config."""
+        canonized_dict = dict()
+
         for role, config in self.items():
             if isinstance(config, int):  # shortest number configuration
-                self[role] = {
+                canonized_dict[role] = {
                     self._global_defaults['region']: {
                         'count': config,
                         'type': self._global_defaults['type'],
                     },
                 }
             elif 'regions' in config:  # dict configuration with regions
-                ...
+                default_type = config.get('type', self._global_defaults['type'])
+
+                canonized_dict[role] = dict()
+                for region, region_config in config['regions'].items():
+                    if isinstance(region_config, int):
+                        region_count = region_config
+                        region_type = default_type
+                    else:
+                        region_count = region_config['count']
+                        region_type = region_config.get('type', default_type)
+
+                    canonized_dict[role][region] = {
+                        'count': region_count,
+                        'type': region_type,
+                    }
             else:  # dict configuration without regions (config must contain count param in this case)
-                self[role] = {
+                canonized_dict[role] = {
                     self._global_defaults['region']: {
                         'count': config['count'],
                         'type': config.get('type', self._global_defaults['type']),
                     },
                 }
+
+        return canonized_dict
 
 
 class TestCaseValidator(object):
@@ -119,27 +147,46 @@ class TestCase(object):
         self.filename = filename
         self._content = yaml_load(filename)
         TestCaseValidator(self._content, filename).validate()
+        self._content = self._prepare_content()
 
     @property
     def binding(self) -> str:
+        """Return provided binding."""
         return self._content['binding']
 
     @property
     def instances(self) -> dict:
-        return dict()
+        """Return copy of instances."""
+        return copy.deepcopy(self._content['instances'])
 
     @property
     def total_instances(self) -> int:
-        return 9
+        """Calculate amount of all instances. It works only after instances config canonization."""
+        instances_amount = 0
+        for config in self._content['instances'].values():
+            for region, region_config in config.items():
+                instances_amount += region_config['count']
+
+        return instances_amount
 
     @property
     def ansible(self) -> dict:
-        return dict(self._content.get('ansible', dict()))
+        """Return copy of ansible config."""
+        return copy.deepcopy(self._content['ansible'])
 
     @property
     def content(self) -> dict:
-        return dict()
+        """Return copy of all content."""
+        return copy.deepcopy(self._content)
 
     def save(self, filename):
         """Save content to file."""
         yaml_dump(filename, self._content)
+
+    def _prepare_content(self):
+        """Convert to canonized config."""
+        result = dict()
+        result['binding'] = self._content['binding']
+        result['ansible'] = self._content.get('ansible', dict())
+        result['instances'] = InstancesDict(self._content['instances']).canonize()
+        return result
