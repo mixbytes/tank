@@ -3,6 +3,7 @@ import os
 from typing import Dict
 import pathlib
 
+import psutil
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
@@ -164,7 +165,11 @@ def main():
         # FIXME better signal handling
         except CaughtSignal as e:
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
-            print('\n%s' % e)
+
+            tank_children = psutil.Process().children(recursive=True)
+            for child_process in tank_children:
+                child_process.send_signal(e.signum)
+
             app.exit_code = 0
 
 
