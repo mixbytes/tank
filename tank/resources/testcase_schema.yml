@@ -9,6 +9,11 @@ definitions:
     type: integer
     minimum: 1  # count must by greater than 0
 
+  packetloss:
+    type: number
+    minimum: 0
+    maximum: 1
+
   type:
     type: string
     enum: ["micro", "small", "standard", "large", "xlarge", "xxlarge", "huge"]
@@ -31,6 +36,7 @@ definitions:
     properties:
       count: {$ref: "#/definitions/count"}
       type: {$ref: "#/definitions/type"}
+      packetloss: {$ref: "#/definitions/packetloss"}
 
     required:
       - count
@@ -49,6 +55,7 @@ definitions:
       count: {$ref: "#/definitions/count"}
       regions: {$ref: "#/definitions/regions"}
       type: {$ref: "#/definitions/type"}
+      packetloss: {$ref: "#/definitions/packetloss"}
 
     required:
       - regions
@@ -64,6 +71,7 @@ properties:
 
     properties:
       type: {$ref: "#/definitions/type"}
+      packetloss: {$ref: "#/definitions/packetloss"}
 
     propertyNames:
       pattern: "^[A-Za-z_]{1,28}$"
