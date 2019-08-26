@@ -2,37 +2,41 @@
 #   module tank.core.testcase
 #
 import copy
+from typing import List
 
 from jsonschema import Draft4Validator, ValidationError
 
 from tank.core import resource_path
 from tank.core.exc import TankTestCaseError
-from tank.core.utils import yaml_load, yaml_dump
+from tank.core.regions import RegionsConfig
+from tank.core.utils import yaml_load, yaml_dump, ratio_from_percent
 
 
-class InstancesDict(dict):
-    """Canonical config for instances.
+class InstancesCanonizer(object):
+    """Canonize config for instances.
 
-    Accept only valid content.
+    Accept only valid instances content.
     Transforms dict to following format:
 
     Role:
       Region1:
         count: ...
         type: ...
+        packetloss: ...
       Region2:
         count: ...
         type: ...
+        packetloss: ...
     """
 
     _GENERAL_OPTIONS = {
         'type': 'small',
-        # 'packetloss': 0,
+        'packetloss': 0,
     }
 
-    def __init__(self, content: dict):
+    def __init__(self, instances_content: dict):
         """Load content and defaults."""
-        super().__init__(content)
+        self._content = instances_content
         self._global_defaults = self._load_defaults()
 
     def _load_defaults(self) -> dict:
@@ -43,50 +47,112 @@ class InstancesDict(dict):
         defaults = dict()
 
         for option, default in self._GENERAL_OPTIONS.items():
-            defaults[option] = self.get(option, default)
-            if option in self.keys():
-                self.pop(option)
+            defaults[option] = self._content.get(option, default)
+            if option in self._content.keys():
+                self._content.pop(option)
 
         defaults['region'] = 'default'
         return defaults
+
+    def _build_configuration(self, count: int, type: str = None, packetloss: int = None) -> dict:
+        """Build minimal configuration from parameters."""
+        configuration = {
+            'count': count,
+            'type': self._global_defaults['type'] if type is None else type,
+            'packetloss': ratio_from_percent(self._global_defaults['packetloss'] if packetloss is None else packetloss),
+        }
+
+        return configuration
 
     def canonize(self) -> dict:
         """Convert to canonized config."""
         canonized_dict = dict()
 
-        for role, config in self.items():
+        for role, config in self._content.items():
             if isinstance(config, int):  # shortest number configuration
                 canonized_dict[role] = {
-                    self._global_defaults['region']: {
-                        'count': config,
-                        'type': self._global_defaults['type'],
-                    },
+                    self._global_defaults['region']: self._build_configuration(count=config),
                 }
             elif 'regions' in config:  # dict configuration with regions
-                default_type = config.get('type', self._global_defaults['type'])
-
                 canonized_dict[role] = dict()
+
                 for region, region_config in config['regions'].items():
                     if isinstance(region_config, int):
-                        region_count = region_config
-                        region_type = default_type
+                        canonized_dict[role][region] = self._build_configuration(
+                            count=region_config,
+                            type=config.get('type'),
+                            packetloss=config.get('packetloss'),
+                        )
                     else:
-                        region_count = region_config['count']
-                        region_type = region_config.get('type', default_type)
-
-                    canonized_dict[role][region] = {
-                        'count': region_count,
-                        'type': region_type,
-                    }
+                        canonized_dict[role][region] = self._build_configuration(
+                            count=region_config['count'],
+                            type=region_config.get('type', config.get('type')),
+                            packetloss=region_config.get('packetloss', config.get('packetloss')),
+                        )
             else:  # dict configuration without regions (config must contain count param in this case)
                 canonized_dict[role] = {
-                    self._global_defaults['region']: {
-                        'count': config['count'],
-                        'type': config.get('type', self._global_defaults['type']),
-                    },
+                    self._global_defaults['region']: self._build_configuration(
+                        count=config['count'],
+                        type=config.get('type'),
+                        packetloss=config.get('packetloss'),
+                    )
                 }
 
         return canonized_dict
+
+
+class RegionsConverter(object):
+    """Convert and merge regions in canonized instances configuration.
+
+    Convert regions to machine-readable format.
+    random = equal amount for all regions.
+
+    Example below:
+        Role:
+            default:
+                count: 1
+                type: small
+                packetloss: 0
+        ...
+
+    Convert to:
+        Role:
+            FRA1:
+                count: 1
+                type: small
+                packetloss: 0
+        ...
+    """
+
+    def __init__(self, app):
+        """Save provider, load RegionsConfig."""
+        self._provider = app.provider
+        self._regions_config = RegionsConfig(app).config
+
+    def _merge_configurations(self, machine_configurations: List[dict]) -> List[dict]:
+        ...
+
+    def _convert_region(self, human_readable: str) -> str:
+        """Convert region from human readable type to machine readable via regions config."""
+        return self._regions_config[self._provider][human_readable]
+
+    def convert(self, instances_config: dict) -> dict:
+        converted_config = dict()
+
+        for role, config in instances_config.items():
+            machines_configurations = []
+
+            for region, region_config in config.items():
+                machines_configurations.append(
+                    {
+                        'region': self._convert_region(region),
+                        **region_config
+                    },
+                )
+
+            converted_config[role] = self._merge_configurations(machines_configurations)
+
+        return converted_config
 
 
 class TestCaseValidator(object):
@@ -163,13 +229,17 @@ class TestCase(object):
 
     @property
     def total_instances(self) -> int:
-        """Calculate amount of all instances. It works only after instances config canonization."""
-        instances_amount = 0
-        for config in self._content['instances'].values():
-            for region, region_config in config.items():
-                instances_amount += region_config['count']
+        """Calculate amount of all instances.
 
-        return instances_amount
+        It works only after instances config canonization and converting.
+        """
+        # instances_amount = 0
+        # for config in self._content['instances'].values():
+        #     for region, region_config in config.items():
+        #         instances_amount += region_config['count']
+        #
+        # return instances_amount
+        return 0
 
     @property
     def ansible(self) -> dict:
@@ -188,7 +258,8 @@ class TestCase(object):
     def _prepare_content(self):
         """Convert to canonized config."""
         result = dict()
+        canonized_instances = InstancesCanonizer(self._content['instances']).canonize()
+        result['instances'] = RegionsConverter(self._app).convert(canonized_instances)
         result['binding'] = self._content['binding']
         result['ansible'] = self._content.get('ansible', dict())
-        result['instances'] = InstancesDict(self._content['instances']).canonize()
         return result

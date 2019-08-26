@@ -44,3 +44,7 @@ def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):
         contents = filter(lambda name: os.path.isdir(os.path.join(dirname, name)), contents)
 
     return contents
+
+
+def ratio_from_percent(percent: int) -> float:
+    return percent / 100
