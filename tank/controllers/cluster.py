@@ -15,7 +15,7 @@ class BaseClusterController(Controller):
     """Base controller for overriding."""
 
     def _deploy(self):
-        testcase = TestCase(first(self.app.pargs.testcase))
+        testcase = TestCase(first(self.app.pargs.testcase), self.app)
         run = Run.new_run(self.app, testcase)
         print('Created tank run: {}'.format(run.run_id))
 
@@ -83,7 +83,7 @@ class NestedCluster(BaseClusterController):
     @ex(help='Init a Tank run, download plugins and modules for Terraform', hide=True,
         arguments=[(['testcase'], {'type': str, 'nargs': 1})])
     def init(self):
-        testcase = TestCase(first(self.app.pargs.testcase))
+        testcase = TestCase(first(self.app.pargs.testcase), self.app)
         run = Run.new_run(self.app, testcase)
         print('Created tank run: {}'.format(run.run_id))
 

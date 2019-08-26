@@ -65,7 +65,7 @@ class Run:
         TerraformInstaller(storage_path=installation_directory).install()
         TerraformInventoryInstaller(storage_path=installation_directory).install()
 
-        self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
+        self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'), app)
         self._meta = yaml_load(fs.join(self._dir, 'meta.yml'))
 
     def init(self):

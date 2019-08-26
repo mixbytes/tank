@@ -142,8 +142,10 @@ class TestCaseValidator(object):
 class TestCase(object):
     """Entity describing single test performed by Tank."""
 
-    def __init__(self, filename):
+    def __init__(self, filename, app):
         """Load content."""
+        self._app = app
+
         self.filename = filename
         self._content = yaml_load(filename)
         TestCaseValidator(self._content, filename).validate()
