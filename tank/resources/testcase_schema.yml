@@ -10,9 +10,9 @@ definitions:
     minimum: 1  # count must by greater than 0
 
   packetloss:
-    type: number
+    type: integer
     minimum: 0
-    maximum: 1
+    maximum: 99
 
   type:
     type: string
@@ -25,7 +25,6 @@ definitions:
       Europe: {$ref: "#/definitions/minimal-configuration"}
       Asia: {$ref: "#/definitions/minimal-configuration"}
       NorthAmerica: {$ref: "#/definitions/minimal-configuration"}
-      default: {$ref: "#/definitions/minimal-configuration"}
       random: {$ref: "#/definitions/minimal-configuration"}
 
     additionalProperties: False
