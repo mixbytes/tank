@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+loss_percentage=$2
+
+function add(){
+  iptables -A INPUT -m comment --comment "TANK: packetloss" -m multiport -p tcp --dports 1025:65535 -m statistic --mode random --probability ${loss_percentage} -j DROP
+  iptables -A OUTPUT -m comment --comment "TANK: packetloss" -m multiport -p tcp --dports 1025:65535 -m statistic --mode random --probability ${loss_percentage} -j DROP
+}
+
+function delete(){
+  _current_packetloss_rules_input=$(iptables -L INPUT --line-numbers | grep "TANK: packetloss"|awk '{print $1}')
+  _current_packetloss_rules_output=$(iptables -L OUTPUT --line-numbers | grep "TANK: packetloss"|awk '{print $1}')
+  iptables -D INPUT ${_current_packetloss_rules_input}
+  iptables -D OUTPUT ${_current_packetloss_rules_output}
+
+}
+
+$1

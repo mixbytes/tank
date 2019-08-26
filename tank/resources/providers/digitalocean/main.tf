@@ -10,9 +10,6 @@ variable "blockchain_name" {}
 
 # run-specific settings
 variable "setup_id" {}
-variable "tank_region" {
-        default = "fra1"
-}
 
 provider "digitalocean" {
   version = "~> 1.1"
@@ -51,7 +48,7 @@ resource "digitalocean_droplet" "tank-{{ name }}" {
     {{ machine_type(instance_cfg.type) }}
 
 {% raw %}
-    region = "${var.tank_region}"
+    region = "fra1"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
@@ -62,21 +59,14 @@ resource "digitalocean_droplet" "tank-{{ name }}" {
       private_key = "${file(var.pvt_key)}"
       timeout = "10m"
   }
-  provisioner "remote-exec" {
-    inline = [
-      "mkdir -p /etc/ansible/facts.d",
-      "echo '${var.tank_region}' > /etc/ansible/facts.d/region.txt",
-      "echo 'fake_standard' > /etc/ansible/facts.d/type.txt",
-      "echo 'fake_producer' > /etc/ansible/facts.d/role.txt",
-    ]
-  }
   provisioner "file" {
-    source      = "${var.scripts_path}/tank_meta.fact"
-    destination = "/etc/ansible/facts.d/tank_meta.fact"
+    source      = "${var.scripts_path}/tank-packetloss"
+    destination = "/usr/local/bin/tank-packetloss"
   }
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /etc/ansible/facts.d/tank_meta.fact",
+      "chmod +x /usr/local/bin/tank-packetloss",
+      "/usr/local/bin/tank-packetloss add 0.001",
     ]
   }
 }
@@ -93,7 +83,7 @@ resource "digitalocean_droplet" "tank-monitoring" {
   {{ machine_type(monitoring_machine_type) }}
 {% raw %}
 
-    region = "${var.tank_region}"
+    region = "fra1"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
