@@ -6,6 +6,7 @@ import sys
 import stat
 import tempfile
 from shutil import rmtree
+from shutil import copytree
 from time import time
 from typing import Dict
 from uuid import uuid4
@@ -44,6 +45,8 @@ class Run:
 
         # make a copy to make sure any alterations of the source won't affect us
         testcase.save(fs.join(temp_dir, 'testcase.yml'))
+
+        copytree(resource_path('scripts'), temp_dir+'/scripts')
 
         # TODO prevent collisions
         os.rename(temp_dir, fs.join(cls._runs_dir(app), run_id))
@@ -257,6 +260,7 @@ class Run:
         env["TF_VAR_state_path"] = self._tf_state_file
         env["TF_VAR_blockchain_name"] = self._testcase.binding.replace('_', '-')[:10]
         env["TF_VAR_setup_id"] = self._meta['setup_id']
+        env["TF_VAR_scripts_path"] = fs.join(self._dir, 'scripts')
 
         for k, v in self._app.cloud_settings.provider_vars.items():
             env["TF_VAR_{}".format(k)] = v

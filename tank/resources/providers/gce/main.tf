@@ -20,6 +20,8 @@ variable "region" {
   default = "europe-west4"
 }
 
+variable "scripts_path" {}
+
 # run-specific settings
 variable "setup_id" {}
 
@@ -100,15 +102,21 @@ resource "google_compute_instance" "tank-{{ name }}" {
     ssh-keys = "root:${file("${var.pub_key}")}"
   }
 
+  connection {
+    user = "root"
+    type = "ssh"
+    private_key = "${file(var.pvt_key)}"
+    timeout = "10m"
+  }
+
+  provisioner "file" {
+    source      = "${var.scripts_path}/tank-packetloss"
+    destination = "/usr/local/bin/tank-packetloss"
+  }
   provisioner "remote-exec" {
-    connection {
-        user = "root"
-        type = "ssh"
-        private_key = "${file(var.pvt_key)}"
-        timeout = "10m"
-    }
     inline = [
-      "export PATH=$PATH:/usr/bin",
+      "chmod +x /usr/local/bin/tank-packetloss",
+      "/usr/local/bin/tank-packetloss add 0.001",
     ]
   }
 }
