@@ -168,7 +168,7 @@ def main():
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
 
             if e.signum in {signal.SIGTERM, signal.SIGINT}:
-                tank_children = psutil.Process().children(recursive=True)
+                tank_children = psutil.Process().children()
                 for child_process in tank_children:
                     child_process.send_signal(e.signum)
 
