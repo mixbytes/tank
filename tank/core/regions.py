@@ -11,11 +11,12 @@ from tank.core.utils import yaml_load
 class RegionsConfig(object):
     """Config object for regions."""
 
-    file_name = 'regions.yml'
+    FILE_NAME = 'regions.yml'
+    REGIONS = ('Europe', 'Asia', 'NorthAmerica',)
 
     def __init__(self, app):
         """Load or copy config file."""
-        self._config_file = fs.join(app.user_dir, self.file_name)
+        self._config_file = fs.join(app.user_dir, self.FILE_NAME)
 
         if not os.path.exists(self._config_file):
             copy2(resource_path('regions.yml'), self._config_file)

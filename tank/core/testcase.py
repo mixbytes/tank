@@ -9,7 +9,7 @@ from jsonschema import Draft4Validator, ValidationError
 from tank.core import resource_path
 from tank.core.exc import TankTestCaseError
 from tank.core.regions import RegionsConfig
-from tank.core.utils import yaml_load, yaml_dump, ratio_from_percent
+from tank.core.utils import yaml_load, yaml_dump, ratio_from_percent, split_evenly
 
 
 class InstancesCanonizer(object):
@@ -124,31 +124,58 @@ class RegionsConverter(object):
         ...
     """
 
+    _GROUP_PARAMETERS = ('region', 'type', 'packetloss',)
+
     def __init__(self, app):
         """Save provider, load RegionsConfig."""
         self._provider = app.provider
         self._regions_config = RegionsConfig(app).config
+        self._available_regions = RegionsConfig.REGIONS
 
     def _merge_configurations(self, machine_configurations: List[dict]) -> List[dict]:
-        ...
+        """Merge machine configurations with equal parameters."""
+        configurations_dict = dict()
+
+        for configuration in machine_configurations:
+            key = tuple(configuration[param] for param in self._GROUP_PARAMETERS)
+
+            if key in configurations_dict:
+                configurations_dict[key]['count'] += configuration['count']
+            else:
+                configurations_dict[key] = configuration
+
+        return list(configurations_dict.values())
 
     def _convert_region(self, human_readable: str) -> str:
         """Convert region from human readable type to machine readable via regions config."""
         return self._regions_config[self._provider][human_readable]
 
     def convert(self, instances_config: dict) -> dict:
+        """Convert configuration to machine readable."""
         converted_config = dict()
 
         for role, config in instances_config.items():
             machines_configurations = []
 
             for region, region_config in config.items():
-                machines_configurations.append(
-                    {
-                        'region': self._convert_region(region),
-                        **region_config
-                    },
-                )
+                if region == 'random':
+                    for i, count in enumerate(split_evenly(region_config['count'], len(self._available_regions))):
+                        if count:
+                            machines_configurations.append(
+                                {
+                                    'region': self._convert_region(self._available_regions[i]),
+                                    'count': count,
+                                    'packetloss': region_config['packetloss'],
+                                    'type': region_config['type'],
+                                }
+                            )
+                else:
+                    machines_configurations.append(
+                        {
+                            'region': self._convert_region(region),
+                            **region_config
+                        },
+                    )
 
             converted_config[role] = self._merge_configurations(machines_configurations)
 
@@ -233,13 +260,12 @@ class TestCase(object):
 
         It works only after instances config canonization and converting.
         """
-        # instances_amount = 0
-        # for config in self._content['instances'].values():
-        #     for region, region_config in config.items():
-        #         instances_amount += region_config['count']
-        #
-        # return instances_amount
-        return 0
+        instances_amount = 0
+        for config in self._content['instances'].values():
+            for item in config:
+                instances_amount += item['count']
+
+        return instances_amount
 
     @property
     def ansible(self) -> dict:
