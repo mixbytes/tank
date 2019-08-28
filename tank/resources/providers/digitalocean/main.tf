@@ -40,15 +40,17 @@ provider "digitalocean" {
 
 
 # Dynamic resources
-{% for name, instance_cfg in instances.items() %}
-resource "digitalocean_droplet" "tank-{{ name }}" {
+{% for name, instance_configs in instances.items() %}
+{% for cfg in instance_configs %}
+
+resource "digitalocean_droplet" "tank-{{ name }}-{{ loop.index }}" {
     image = "ubuntu-18-04-x64"
-    name = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-${count.index}"
-    count = "{{ instance_cfg.count }}"
-    {{ machine_type(instance_cfg.type) }}
+    name = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}"
+    count = "{{ cfg.count }}"
+    {{ machine_type(cfg.type) }}
+    region = "{{ cfg.region }}"
 
 {% raw %}
-    region = "fra1"
     private_networking = true
     ssh_keys = [
       "${var.ssh_fingerprint}"
@@ -71,6 +73,8 @@ resource "digitalocean_droplet" "tank-{{ name }}" {
   }
 }
 {% endraw %}
+
+{% endfor %}
 {% endfor %}
 # End of dynamic resources
 
@@ -104,10 +108,14 @@ resource "digitalocean_droplet" "tank-monitoring" {
 
 
 # Dynamic output
-{% for name, instance_cfg in instances.items() %}
-output "{{ name }} node IP addresses" {
-    value = "${digitalocean_droplet.tank-{{ name }}.*.ipv4_address}"
+{% for name, instance_configs in instances.items() %}
+{% for cfg in instance_configs %}
+
+output "{{ name }}-{{ loop.index }} node IP addresses" {
+    value = "${digitalocean_droplet.tank-{{ name }}-{{ loop.index }}.*.ipv4_address}"
 }
+
+{% endfor %}
 {% endfor %}
 # End of dynamic output
 

@@ -74,14 +74,16 @@ resource "google_compute_firewall" "default" {
 
 
 # Dynamic resources
-{% for name, instance_cfg in instances.items() %}
-resource "google_compute_instance" "tank-{{ name }}" {
-  name         = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-${count.index}"
-  count        = "{{ instance_cfg.count }}"
-  {{ machine_type(instance_cfg.type) }}
+{% for name, instance_configs in instances.items() %}
+{% for cfg in instance_configs %}
+
+resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
+  name         = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}"
+  count        = "{{ cfg.count }}"
+  {{ machine_type(cfg.type) }}
+  zone         = "{{ cfg.region }}"
 
 {% raw %}
-  zone         = "${var.region_zone}"
   tags         = ["blockchain"]
 
   boot_disk {
@@ -121,6 +123,8 @@ resource "google_compute_instance" "tank-{{ name }}" {
   }
 }
 {% endraw %}
+
+{% endfor %}
 {% endfor %}
 # End of dynamic resources
 
@@ -170,10 +174,14 @@ resource "google_compute_instance" "monitoring" {
 
 
 # Dynamic output
-{% for name, instance_cfg in instances.items() %}
-output "{{ name }} nodes IP addresses" {
-    value = "${google_compute_instance.tank-{{ name }}.*.network_interface.0.access_config.0.nat_ip}"
+{% for name, instance_configs in instances.items() %}
+{% for cfg in instance_configs %}
+
+output "{{ name }}-{{ loop.index }} nodes IP addresses" {
+    value = "${google_compute_instance.tank-{{ name }}-{{ loop.index }}.*.network_interface.0.access_config.0.nat_ip}"
 }
+
+{% endfor %}
 {% endfor %}
 # End of dynamic output
 

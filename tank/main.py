@@ -119,6 +119,10 @@ class MixbytesTank(App):
         return self._cloud_settings
 
     @property
+    def provider(self) -> str:
+        return self.cloud_settings.provider.value
+
+    @property
     def terraform_run_command(self) -> str:
         return self.config.get(self.Meta.label, 'terraform_run_command')
 
