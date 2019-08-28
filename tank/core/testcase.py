@@ -117,10 +117,14 @@ class RegionsConverter(object):
 
     Convert to:
         Role:
-            FRA1:
+            - {
+                region: FRA1
                 count: 1
                 type: small
                 packetloss: 0
+            }
+            - ...
+            - ...
         ...
     """
 
@@ -238,11 +242,16 @@ class TestCase(object):
     def __init__(self, filename, app):
         """Load content."""
         self._app = app
+        self._filename = filename
+        self._original_content = yaml_load(filename)
 
-        self.filename = filename
-        self._content = yaml_load(filename)
+        self._content = copy.deepcopy(self._original_content)
         TestCaseValidator(self._content, filename).validate()
         self._content = self._prepare_content()
+
+    @property
+    def filename(self) -> str:
+        return self._filename
 
     @property
     def binding(self) -> str:
@@ -278,8 +287,8 @@ class TestCase(object):
         return copy.deepcopy(self._content)
 
     def save(self, filename):
-        """Save content to file."""
-        yaml_dump(filename, self._content)
+        """Save original content to file."""
+        yaml_dump(filename, self._original_content)
 
     def _prepare_content(self):
         """Convert to canonized config."""
