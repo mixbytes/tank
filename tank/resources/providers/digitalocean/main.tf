@@ -49,6 +49,7 @@ resource "digitalocean_droplet" "tank-{{ name }}-{{ loop.index }}" {
     count = "{{ cfg.count }}"
     {{ machine_type(cfg.type) }}
     region = "{{ cfg.region }}"
+    packetloss = "{{ cfg.packetloss }}"
 
 {% raw %}
     private_networking = true
