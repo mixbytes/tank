@@ -3,8 +3,6 @@
 ## Requirements
 
 - Python3
-- Terraform 0.11.13
-- Terraform-Inventory v0.8
 
 
 ## Installation
@@ -12,7 +10,7 @@
 ### Terraform & Terraform-Inventory
 
 You don't need to worry about installation of these tools.
-Everything will be installed to `~/.tank` directory automatically when `Run` object will be created.
+Everything will be installed to `~/.tank/bin` directory automatically when the first `Run` object will be created.
 
 ### Optional: create virtualenv
 
