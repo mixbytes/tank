@@ -1,3 +1,4 @@
+import logging
 import os
 import stat
 import sys
@@ -5,6 +6,9 @@ import zipfile
 from urllib.request import urlopen
 
 import sh
+
+
+_logger = logging.getLogger(__name__)
 
 
 class BaseInstaller(object):
@@ -42,7 +46,7 @@ class BaseInstaller(object):
 
     def _download_archive(self):
         """Download archive from provided url."""
-        print('Downloading archive...')
+        _logger.debug('Downloading archive...')
         response = urlopen(self.url)
 
         with open(self._archive_full_path, 'wb') as archive_file:
@@ -53,19 +57,19 @@ class BaseInstaller(object):
                 archive_file.write(chunk)
                 chunk = response.read(chunk_size)
 
-        print('Archive {name} has been successfully downloaded.'.format(name=self.archive_name))
+        _logger.debug('Archive {name} has been successfully downloaded.'.format(name=self.archive_name))
 
     def _unpack_archive(self):
         """Unpack archive with provided name."""
         with zipfile.ZipFile(self._archive_full_path, 'r') as zip_ref:
             zip_ref.extractall(self._storage_path)
 
-        print('Archive has been unpacked.')
+        _logger.debug('Archive has been unpacked.')
 
     def _remove_archive(self):
         """Remove archive after unpacking."""
         os.remove(self._archive_full_path)
-        print('Archive has been removed.')
+        _logger.debug('Archive has been removed.')
 
     def _make_executable(self):
         """Makes file executable."""
@@ -83,18 +87,18 @@ class BaseInstaller(object):
             else:
                 os.environ['PATH'] = self._storage_path
 
-        print('Variable has been added to $PATH.')
+        _logger.debug('Variable has been added to $PATH.')
 
     def install(self):
         """Installation logic is here."""
         if not self._is_installed():
-            print('Installing {name}...'.format(name=self.file_name))
+            _logger.debug('Installing {name}...'.format(name=self.file_name))
             self._download_archive()
             self._unpack_archive()
             self._remove_archive()
             self._make_executable()
         else:
-            print('{name} is already installed.'.format(name=self.file_name))
+            _logger.debug('{name} is already installed.'.format(name=self.file_name))
 
         self._add_variables()
 
