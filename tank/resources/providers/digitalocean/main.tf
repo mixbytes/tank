@@ -46,7 +46,6 @@ provider "digitalocean" {
 resource "digitalocean_droplet" "tank-{{ name }}-{{ loop.index }}" {
     image = "ubuntu-18-04-x64"
     name = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}"
-    count = "{{ cfg.count }}"
     {{ machine_type(cfg.type) }}
     region = "{{ cfg.region }}"
 
@@ -68,7 +67,9 @@ resource "digitalocean_droplet" "tank-{{ name }}-{{ loop.index }}" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /usr/local/bin/tank-packetloss",
-      "/usr/local/bin/tank-packetloss add 0.001",
+    {% endraw %}
+      "/usr/local/bin/tank-packetloss add {{  cfg.packetloss }}",
+    {% raw %}
     ]
   }
 }

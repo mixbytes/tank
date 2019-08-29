@@ -79,7 +79,6 @@ resource "google_compute_firewall" "default" {
 
 resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}"
-  count        = "{{ cfg.count }}"
   {{ machine_type(cfg.type) }}
   zone         = "{{ cfg.region }}"
 
@@ -118,7 +117,9 @@ resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /usr/local/bin/tank-packetloss",
-      "/usr/local/bin/tank-packetloss add 0.001",
+      {% endraw %}
+      "/usr/local/bin/tank-packetloss add {{ cfg.packetloss }}",
+      {% raw %}
     ]
   }
 }
