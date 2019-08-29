@@ -23,20 +23,9 @@ Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
 ## Requirements
 
 - Python3
-- Terraform 0.11.13
-- Terraform-Inventory v0.8
 
 ## Installation
 
-### Terraform & Terraform-Inventory
-
-To install, run [tank/install-terraform.sh](tank/install-terraform.sh) on Debian-like Linux systems (`sudo` is required).
-
-Alternatively, the mentioned terraform* requirements can be manually downloaded and unpacked to the `/usr/local/bin` directory.
-
-This process will be automated in the next release.
-
-### Tank
 ```shell
 pip3 install mixbytes-tank
 ```
