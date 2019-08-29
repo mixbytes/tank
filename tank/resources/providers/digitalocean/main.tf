@@ -45,7 +45,8 @@ provider "digitalocean" {
 
 resource "digitalocean_droplet" "tank-{{ name }}-{{ loop.index }}" {
     image = "ubuntu-18-04-x64"
-    name = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}"
+    name = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}-${count.index}"
+    count = "{{ cfg.count }}"
     {{ machine_type(cfg.type) }}
     region = "{{ cfg.region }}"
 

@@ -78,7 +78,8 @@ resource "google_compute_firewall" "default" {
 {% for cfg in instance_configs %}
 
 resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
-  name         = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}"
+  name         = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}-${count.index}"
+  count        = "{{ cfg.count }}"
   {{ machine_type(cfg.type) }}
   zone         = "{{ cfg.region }}"
 
