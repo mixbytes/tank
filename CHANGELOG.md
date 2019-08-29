@@ -1,5 +1,12 @@
 # MixBytes Tank Change History
 
+## 1.0
+
+Added support of geographically distributed testing, network packetloss.
+
+Lots of usability improvements.
+
+
 ## 0.2
 
 Added support of test cases.
