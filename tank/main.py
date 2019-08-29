@@ -3,8 +3,6 @@ import os
 from typing import Dict
 import pathlib
 
-#import psutil
-import signal
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
@@ -171,10 +169,7 @@ def main():
         except CaughtSignal as e:
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
 
-            if e.signum in {signal.SIGTERM, signal.SIGINT}:
-                tank_children = []#psutil.Process().children()
-                for child_process in tank_children:
-                    child_process.send_signal(e.signum)
+            print(f'{e}')
 
             app.exit_code = 0
 
