@@ -12,7 +12,7 @@ cache:
   - pip
 
 script:
-  - echo 'OK'
+  - make dist
 
 deploy:
   - provider: pypi
