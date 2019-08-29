@@ -118,7 +118,7 @@ resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /usr/local/bin/tank-packetloss",
-      "/usr/local/bin/tank-packetloss add 0.001",
+      "/usr/local/bin/tank-packetloss add {{ cfg.packetloss }}",
     ]
   }
 }
