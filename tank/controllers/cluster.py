@@ -34,6 +34,11 @@ class BaseClusterController(Controller):
         rows = sorted([[ip, i['hostname']] for ip, i in run_inspect_data['cluster'].items()], key=second)
         print(tabulate(list(rows), headers=['IP', 'HOSTNAME']))
 
+        for ip, info in run_inspect_data['cluster'].items():
+            if info['hostname'].endswith('-monitoring'):
+                print('\nMonitoring: http://{}:3000/'.format(ip))
+                break
+
 
 class EmbeddedCluster(BaseClusterController):
     """Embedded cluster controller for providing short commands."""
