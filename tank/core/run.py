@@ -3,8 +3,10 @@
 #
 import os
 import sys
+import stat
 import tempfile
 from shutil import rmtree
+from shutil import copytree
 from time import time
 from typing import Dict
 from uuid import uuid4
@@ -18,10 +20,11 @@ import namesgenerator
 
 from tank.core import resource_path
 from tank.core.binding import AnsibleBinding
-from tank.core.exc import TankError
+from tank.core.exc import TankError, TankConfigError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
 from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
+from tank.terraform_installer import TerraformInstaller, TerraformInventoryInstaller
 
 
 class Run:
@@ -43,6 +46,8 @@ class Run:
         # make a copy to make sure any alterations of the source won't affect us
         testcase.save(fs.join(temp_dir, 'testcase.yml'))
 
+        copytree(resource_path('scripts'), temp_dir+'/scripts')
+
         # TODO prevent collisions
         os.rename(temp_dir, fs.join(cls._runs_dir(app), run_id))
 
@@ -58,7 +63,11 @@ class Run:
         self._app = app
         self.run_id = run_id
 
-        self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'))
+        # install terraform and terraform-inventory
+        TerraformInstaller(storage_path=app.installation_dir).install()
+        TerraformInventoryInstaller(storage_path=app.installation_dir).install()
+
+        self._testcase = TestCase(fs.join(self._dir, 'testcase.yml'), app)
         self._meta = yaml_load(fs.join(self._dir, 'meta.yml'))
 
     def init(self):
@@ -85,6 +94,8 @@ class Run:
         """
         Create instances for the cluster.
         """
+        self._check_private_key_permissions()
+
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
                 "apply", "-auto-approve", "-parallelism=50", self._tf_plan_dir,
@@ -107,17 +118,23 @@ class Run:
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def provision(self):
+        self._check_private_key_permissions()
+
         extra_vars = {
             # including blockchain-specific part of the playbook
             'blockchain_ansible_playbook':
                 fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'playbook.yml'),
             # saving a report of the important cluster facts
             '_cluster_ansible_report': self._cluster_report_file,
+            # grafana monitoring login/password
+            'monitoring_user_login': self._app.cloud_settings.monitoring_vars['admin_user'],
+            'monitoring_user_password': self._app.cloud_settings.monitoring_vars['admin_password'],
         }
 
         with self._lock:
             sh.Command("ansible-playbook")(
-                "-f", "50", "-u", "root",
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
@@ -137,6 +154,8 @@ class Run:
         return result
 
     def bench(self, load_profile: str, tps: int, total_tx: int):
+        self._check_private_key_permissions()
+
         bench_command = 'bench --common-config=/tool/bench.config.json ' \
                         '--module-config=/tool/polkadot.bench.config.json'
         if tps is not None:
@@ -160,7 +179,8 @@ class Run:
             extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
 
             sh.Command("ansible-playbook")(
-                "-f", "30", "-u", "root",
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
                 "-i", self._app.terraform_inventory_run_command,
                 "--extra-vars", self._ansible_extra_vars(extra_vars),
                 "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
@@ -229,7 +249,6 @@ class Run:
 
         return json.dumps(a_vars, sort_keys=True)
 
-
     def _make_env(self) -> Dict:
         fs.ensure_dir_exists(self._tf_data_dir)
         fs.ensure_dir_exists(self._log_dir)
@@ -241,6 +260,7 @@ class Run:
         env["TF_VAR_state_path"] = self._tf_state_file
         env["TF_VAR_blockchain_name"] = self._testcase.binding.replace('_', '-')[:10]
         env["TF_VAR_setup_id"] = self._meta['setup_id']
+        env["TF_VAR_scripts_path"] = fs.join(self._dir, 'scripts')
 
         for k, v in self._app.cloud_settings.provider_vars.items():
             env["TF_VAR_{}".format(k)] = v
@@ -259,6 +279,18 @@ class Run:
     def _cluster_report(self):
         return json_load(self._cluster_report_file)
 
+    def _check_private_key_permissions(self):
+        """
+        Checks whether groups and others have 0 access to private key
+        """
+        # oct -'0o77', bin - '0b000111111', which is the same as ----rwxrwx
+        NOT_OWNER_PERMISSION = stat.S_IRWXG + stat.S_IRWXO
+
+        file_stat: os.stat_result = os.stat(self._app.cloud_settings.provider_vars['pvt_key'])
+        file_mode = stat.S_IMODE(file_stat.st_mode)
+
+        if file_mode & NOT_OWNER_PERMISSION != 0:
+            raise TankConfigError('Private key has wrong permission mask.')
 
     @property
     def _dir(self) -> str:
@@ -291,4 +323,3 @@ class Run:
     @property
     def _cluster_report_file(self) -> str:
         return fs.join(self._dir, 'cluster_ansible_report.json')
-

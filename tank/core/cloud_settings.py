@@ -47,6 +47,12 @@ class CloudUserSettings:
         if self.provider is None:
             raise TankConfigError('Cloud provider is not specified or not known')
 
+        self.monitoring_vars = app_config.get_dict()['tank'].get('monitoring')
+        try:
+            jsonschema.validate(self.monitoring_vars, self.__class__._MONITORING_SCHEMA)
+        except jsonschema.ValidationError as e:
+            raise TankConfigError('Failed to validate admin_user/password monitoring settings', e)
+
         self.provider_vars = app_config.get_dict().get(self.provider.value)
         if self.provider_vars is None or not isinstance(self.provider_vars, dict):
             raise TankConfigError('Cloud provider is not configured')
@@ -113,6 +119,19 @@ type: object
 additionalProperties: False
 properties:
     private_interface:
+        type: string
+''')
+
+    _MONITORING_SCHEMA = yaml.safe_load(r'''
+type: object
+additionalProperties: False
+required:
+    - admin_user
+    - admin_password
+properties:
+    admin_user:
+        type: string
+    admin_password:
         type: string
 ''')
 

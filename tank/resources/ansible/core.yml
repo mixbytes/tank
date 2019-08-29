@@ -66,6 +66,8 @@
     - debug: msg="Docker Engine installed"
       tags: [print_action]
 
+- import_playbook: common.yml
+
 - import_playbook: "{{ blockchain_ansible_playbook }}"
 
 - name: Converge monitoring node
@@ -76,8 +78,8 @@
   vars:
     bc_polkadot_comp_state_monitoring: present
     install_promstack: true
-    admin_user: tank
-    admin_password: tank
+    admin_user: "{{ monitoring_user_login }}"
+    admin_password: "{{ monitoring_user_password }}"
   roles:
     - role: tank.blockchain
   tasks:

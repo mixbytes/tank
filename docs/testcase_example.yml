@@ -5,10 +5,11 @@ binding: polkadot
 
 # Configuration of instances for the chosen binding
 instances:
-  boot: # this codename of the instance type will be included into the hostname
+  boot: # this codename of the instance role will be included into the hostname
     # optionally, you can customize instances
     count: 1
     # cloud-agnostic machine size
+    # the option can be specified on the instances level, per instance role, per region
     # available options: micro, small, standard, large, xlarge, xxlarge, huge
     type: large
 
