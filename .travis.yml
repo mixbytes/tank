@@ -1,18 +1,24 @@
-dist: xenial
-
-sudo: false
-
 language: python
 
 matrix:
   include:
-    - python: 3.7
+    - os: linux
+      dist: xenial
+      python: 3.7
+    - os: osx
+      osx_image: xcode11
+      language: shell
+
+sudo: false
 
 cache:
   - pip
 
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update          ; fi
+
 script:
-  - echo 'OK'
+  - make dist
 
 deploy:
   - provider: pypi
