@@ -98,7 +98,7 @@ class Run:
 
         with self._lock:
             sh.Command(self._app.terraform_run_command)(
-                "apply", "-auto-approve", "-parallelism=50", self._tf_plan_dir,
+                "apply", "-auto-approve", "-parallelism=51", self._tf_plan_dir,
                 _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
 
     def dependency(self):
