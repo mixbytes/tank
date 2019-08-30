@@ -30,6 +30,12 @@ Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
 pip3 install mixbytes-tank
 ```
 
+Use the `--pre` option to get the latest release candidate:
+
+```shell
+pip3 install mixbytes-tank --pre
+```
+
 
 ## Usage
 
