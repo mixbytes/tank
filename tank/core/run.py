@@ -267,6 +267,7 @@ class Run:
 
         env["ANSIBLE_ROLES_PATH"] = self._roles_path
         env["ANSIBLE_CONFIG"] = resource_path('ansible', 'ansible.cfg')
+        env["ANSIBLE_LOG_PATH"] = fs.join(self._log_dir, 'ansible.log')
 
         return env
 
