@@ -251,18 +251,21 @@ IP             HOSTNAME
 167.71.36.222  tank-polkadot-db2d81e031a1-producer-0
 165.22.74.160  tank-polkadot-db2d81e031a1-producer-1
 
+Monitoring: http://167.71.36.231:3000/
+
 Tank run id: festive_lalande
 ```
 
-Locate an IP corresponding to a hostname ending with `-monitoring` - that's where all the metrics are (see below).
+Also you can see the monitoring link - that's where all the metrics are (see below).
 
 The cluster is up and running at this moment.
 You can see its state on the dashboards or query cluster information via `info` and `inspect` commands (see below).
 
 ### Log in to the monitoring
 
-Tank uses ***grafana*** to visualise benchmark metrics. In order to access your ***grafana*** dashboard open `http://{monitoring ip}:3000/dashboards` in your browser. Access to dashboard requires entering ***grafana*** username and password.
-***Grafana*** username and password can be defined by user in `monitoring` option of the `tank` section in your `/.tank.yml` configuration file.
+Tank uses ***grafana*** to visualise benchmark metrics. In order to access your ***grafana*** dashboard open the monitoring link in your browser.
+Access to dashboard requires entering ***grafana*** username and password.
+***Grafana*** username and password can be defined by user in `monitoring` option of the `tank` section in your `~/.tank.yml` configuration file.
 If you did not define these variables in your configuration file, type 'tank' in username and password fields.
 You will see cluster metrics in the predefined dashboards.
 You can query the metrics at `http://{the monitoring ip}:3000/explore`.
@@ -321,3 +324,38 @@ Entire Tank data of a particular run (both in the cloud and on the developer's m
 ```shell
 tank cluster destroy <run id>
 ```
+
+### Other cluster commands
+
+The `cluster deploy` command actually does the following steps:
+
+* init
+* create
+* dependency
+* provision
+
+These steps can be executed step by step or repeated. This is low-level tank usage.
+Tank does not check for correct order or applicability of this operations if you run them manually.
+
+For more information see `tank cluster -h`
+
+#### init
+
+Creates a run and prepares Terraform execution.
+
+#### plan
+
+This is a read-only command. Generates and shows an execution plan by Terraform.
+The plan shows cloud resources that will be created during `create`.
+
+#### create
+
+Creates a cluster in a cloud by calling Terraform for the run.
+
+#### dependency
+
+Installs necessary Ansible dependencies (roles) for the run.
+
+#### provision
+
+Sets up all necessary software on the cluster by calling Ansible for the run.
