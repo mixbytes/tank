@@ -23,20 +23,9 @@ Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
 ## Requirements
 
 - Python3
-- Terraform 0.11.13
-- Terraform-Inventory v0.8
 
 ## Installation
 
-### Terraform & Terraform-Inventory
-
-To install, run [tank/install-terraform.sh](tank/install-terraform.sh) on Debian-like Linux systems (`sudo` is required).
-
-Alternatively, the mentioned terraform* requirements can be manually downloaded and unpacked to the `/usr/local/bin` directory.
-
-This process will be automated in the next release.
-
-### Tank
 ```shell
 pip3 install mixbytes-tank
 ```
@@ -68,7 +57,7 @@ As a result, the cluster instance listing will be printed along with the run id.
 ### 4. Log in to the monitoring
 
 Locate the IP-address of the newly-created instance which name ends with `-monitoring`.
-Open `http://{monitoring ip}:3000/dashboards` in your browser, type in “tank” in username and password fields.
+Open `http://{monitoring ip}:3000/dashboards` in your browser, type in 'tank' in the username and password fields.
 You will see cluster metrics in the predefined dashboards.
 
 ### 5. List current active runs

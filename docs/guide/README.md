@@ -3,19 +3,14 @@
 ## Requirements
 
 - Python3
-- Terraform 0.11.13
-- Terraform-Inventory v0.8
 
 
 ## Installation
 
 ### Terraform & Terraform-Inventory
 
-To install, run [tank/install-terraform.sh](../../tank/install-terraform.sh) on Debian-like Linux systems (`sudo` is required).
-
-Alternatively, the mentioned terraform* requirements can be manually downloaded and unpacked to the `/usr/local/bin` directory.
-
-In the next release this process will be automated.
+You don't need to worry about installation of these tools.
+Everything will be automatically installed in the `~/.tank/bin` directory when the first `Run` object is created.
 
 ### Optional: create virtualenv
 
@@ -107,7 +102,7 @@ Note: these options affect only Tank logging. Terraform and Ansible won't be aff
 
 A Tank testcase describes a benchmark scenario.
 
-The example can be found at [docs/testcase_example.yml](../testcase_example.yml).
+A simple example can be found at [docs/testcase_example.yml](../testcase_example.yml).
 
 Principal testcase contents are a current blockchain binding name and the configuration of instances.
 
@@ -118,15 +113,108 @@ A binding provides an ansible role to deploy the blockchain (some examples [here
 and javascript code - to create load in the cluster ([examples here](https://github.com/mixbytes?utf8=✓&q=tank.bench&type=&language=)).
 Similarly, databases use bindings to provide APIs to programming languages.
 
+A binding is specified by its name, e.g.:
+```yaml
+binding: polkadot
+```
+
 You shouldn't worry about writing or understanding a binding unless you want to add support of some blockchain to Tank.
 
-A binding is specified by its name, e.g.: `binding: polkadot`.
+#### Blockchain instances
 
-A blockchain cluster consists of a number of different instance roles, e.g. fullnodes and miners/validators.
+A blockchain cluster consists of a number of different *instance roles*, e.g. full nodes and miners/validators.
 Available roles depend on the binding used.
-For each instance role you can specify a number of instances (0 by default) and an instance type, which is a cloud-agnostic machine size.
 
-##### Ansible variables forwarding
+A *blockchain instances configuration* is a set of *role configurations*.
+E.g., in the simplest case:
+
+```yaml
+instances:
+  boot: 1
+  producer: 3
+```
+
+##### role configuration
+
+A *role configuration* is a number in the simplest case. The number specifies how many servers should be set up for the role to be installed.
+
+```yaml
+instances:
+  producer: 3
+```
+
+Alternatively, a role configuration can be written as an object with various options - generally applicable and role configuration-specific.
+
+```yaml
+instances:
+  boot:
+    count: 1
+```
+
+* An option `count` specifies how many servers to set up with this role installed.
+
+* An option `regions` sets a *region configuration* for the role configuration.
+
+##### region configuration
+
+A region configuration provides *region options* for region names.
+
+In the simplest case, a region configuration says how many role instances per region should be set up:
+
+```yaml
+instances:
+  producer:
+    regions:
+      Europe: 4
+      Asia: 3
+      NorthAmerica: 3
+```
+
+A region name is one of the following: `Europe`, `Asia`, `NorthAmerica`, `random`, `default`.
+
+`Europe`, `Asia`, `NorthAmerica` region names are self-explanatory.
+
+`random` region indicates that instances must be distributed evenly across available regions.
+
+Region names are cloud provider-agnostic and can be configured in `~/.tank/regions.yml` (by default the predefined region config is copied and used at the moment of the first run creation).
+
+In general, a *region options* can be written as a set of various options - that are generally applicable and region-specific.
+
+* `count` region option specifies how many servers should be set up in the region.
+
+##### Generally applicable options
+
+Generally applicable options can be specified in a number of contexts: *instances*, *role configuration*, *region configuration*.
+
+More local contexts have higher precedence over wrapping contexts,
+e.g. an option specified in a role configuration takes precedence over the same option specified at the `instances` level:
+
+```yaml
+instances:
+  type: standard
+
+  boot:
+    count: 1
+    type: large
+
+  producer:
+    regions:
+      random: 10
+```
+
+The options are:
+
+* `type` - an instance type, which is a cloud-agnostic machine size.
+Available types: micro (~1 GB mem), small (~2 GB mem), standard (4GB), large (8GB), xlarge (16GB), xxlarge (32GB), huge (64GB)
+* `packetloss` - simulates bad network operation and sets the percent of lost packets. Note: TCP ports 1..1024 are not packetloss-ed.
+
+##### Instance configuration examples
+
+A simple geographically distributed test case - [docs/testcase_geo_example.yml](../testcase_geo_example.yml).
+
+An example of utilizing generally applicable options and a region configuration can be found here [docs/testcase_geo_advanced_example.yml](../testcase_geo_advanced_example.yml).
+
+#### Ansible variables forwarding
 
 There is a way to pass some Ansible variables from a testcase to a cluster.
 This low-level feature can be used to tailor the blockchain for a particular test case.
@@ -141,6 +229,10 @@ Each variable will be prefixed with `bc_` before being passed to Ansible.
 Deploy a new cluster via
 ```shell
 tank cluster deploy <testcase file>
+```
+or
+```shell
+tank run <testcase file>
 ```
 
 This command will create a cluster dedicated to the specified test case.
@@ -158,17 +250,22 @@ IP             HOSTNAME
 167.71.36.222  tank-polkadot-db2d81e031a1-producer-0
 165.22.74.160  tank-polkadot-db2d81e031a1-producer-1
 
+Monitoring: http://167.71.36.231:3000/
+
 Tank run id: festive_lalande
 ```
 
-Locate an IP corresponding to a hostname ending with `-monitoring` - that's where all the metrics are (see below).
+You can also see the monitoring link - that's where all the metrics are collected (see below).
 
 The cluster is up and running at this moment.
 You can see its state on the dashboards or query cluster information via `info` and `inspect` commands (see below).
 
 ### Log in to the monitoring
 
-Open `http://{the monitoring ip from the previous step}:3000/dashboards` in your browser, type in “tank” in username and password fields.
+Tank uses ***grafana*** to visualize benchmark metrics. In order to access your ***grafana*** dashboard open the monitoring link in your browser.
+Access to dashboard requires entering ***grafana*** username and password.
+You can modify ***Grafana*** username and password in the in the `~/.tank.yml` configuration file (go to `monitoring` in the `tank` section).
+If you have not defined these variables in your configuration file, type in 'tank' in the username and password fields.
 You will see cluster metrics in the predefined dashboards.
 You can query the metrics at `http://{the monitoring ip}:3000/explore`.
 
@@ -226,3 +323,38 @@ Entire Tank data of a particular run (both in the cloud and on the developer's m
 ```shell
 tank cluster destroy <run id>
 ```
+
+### Other cluster commands
+
+The `cluster deploy` command actually does the following steps:
+
+* init
+* create
+* dependency
+* provision
+
+These steps can be executed step by step or repeated. This is low-level tank usage.
+Tank does not check for the correct order or applicability of these operations if you run them manually.
+
+For more information see `tank cluster -h`
+
+#### init
+
+It creates a run and prepares Terraform execution.
+
+#### plan
+
+This is a read-only command that generates and shows an execution plan by Terraform.
+The plan shows cloud resources that will be created during `create`.
+
+#### create
+
+It creates a cluster in a cloud by calling Terraform for the run.
+
+#### dependency
+
+It installs necessary Ansible dependencies (roles) for the run.
+
+#### provision
+
+It sets up all necessary software in a cluster by calling Ansible for the run.

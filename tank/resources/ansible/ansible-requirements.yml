@@ -1,3 +1,7 @@
+- src: https://github.com/mixbytes/tank.ansible-core
+  version: master
+  name: tank.ansible-core
+
 - src: https://github.com/geerlingguy/ansible-role-docker
   version: master
   name: tank.docker

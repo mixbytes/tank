@@ -1,8 +1,8 @@
+import logging.config
 import os
 from typing import Dict
 import pathlib
 
-import sh
 from cement import App, TestApp, init_defaults
 from cement.core.exc import CaughtSignal
 from cement.utils import fs
@@ -10,20 +10,28 @@ from cement.utils import fs
 from tank.core.cloud_settings import CloudUserSettings
 from tank.core.exc import TankError
 from tank.controllers.base import Base
-from tank.controllers.cluster import Cluster
+from tank.controllers.cluster import NestedCluster, EmbeddedCluster
+from tank.logging_conf import build_logging_conf
+
+
+logger = logging.getLogger(__name__)
 
 
 def _default_config() -> Dict:
-    config = init_defaults('tank',
-                           'log.logging')
+    config = init_defaults('tank', 'log.logging')
 
     config['tank'] = {
-        'terraform_run_command': '/usr/local/bin/terraform',
-        'terraform_inventory_run_command': '/usr/local/bin/terraform-inventory',
+        'ansible': {
+            'forks': 50,
+        },
+    }
+
+    config['tank']['monitoring'] = {
+        "admin_user": "tank",
+        "admin_password": "tank"
     }
 
     config['log.logging']['level'] = 'WARNING'
-
     return config
 
 
@@ -66,22 +74,33 @@ class MixbytesTank(App):
         # register handlers
         handlers = [
             Base,
-            Cluster
+            EmbeddedCluster,
+            NestedCluster,
         ]
 
         # register hooks
         hooks = [
         ]
 
-
     def __init__(self):
         super().__init__()
         self._cloud_settings = None
 
-
     def setup(self):
         super(MixbytesTank, self).setup()
         fs.ensure_dir_exists(self.user_dir)
+
+        additional_config_defaults = {
+            'tank': {
+                'terraform_run_command': os.path.join(self.installation_dir, 'terraform'),
+                'terraform_inventory_run_command': os.path.join(self.installation_dir, 'terraform-inventory'),
+            },
+        }
+
+        for section, variables_dict in additional_config_defaults.items():
+            for key, value in variables_dict.items():
+                if key not in self.config.keys(section):
+                    self.config.set(section, key, value)
 
     @property
     def app_env(self) -> Dict:
@@ -98,6 +117,10 @@ class MixbytesTank(App):
         return self._cloud_settings
 
     @property
+    def provider(self) -> str:
+        return self.cloud_settings.provider.value
+
+    @property
     def terraform_run_command(self) -> str:
         return self.config.get(self.Meta.label, 'terraform_run_command')
 
@@ -109,19 +132,14 @@ class MixbytesTank(App):
     def user_dir(self) -> str:
         return fs.abspath(fs.join(pathlib.Path.home(), '.tank'))
 
+    @property
+    def installation_dir(self) -> str:
+        return fs.abspath(fs.join(self.user_dir, 'bin'))
 
-    def _check_terraform_availability(self):
-        try:
-            sh.Command(self.terraform_run_command, "--version")
-        except Exception:
-            raise TankError("Error calling Terraform at '{}'".format(self.terraform_run_command))
-
-    def _check_terraform_inventory_availability(self):
-        try:
-            sh.Command(self.terraform_inventory_run_command, "-version")
-        except Exception:
-            raise TankError("Error calling Terraform Inventory at '{}'".format(
-                self.terraform_inventory_run_command))
+    @property
+    def ansible_config(self) -> dict:
+        """Return dict with ansible parameters."""
+        return self.config.get(self.Meta.label, 'ansible')
 
 
 class MixbytesTankTest(TestApp, MixbytesTank):
@@ -133,9 +151,10 @@ class MixbytesTankTest(TestApp, MixbytesTank):
 
 def main():
     with MixbytesTank() as app:
+        logs_dir = os.path.join(app.user_dir, 'logs')
+        logging.config.dictConfig(build_logging_conf(logs_dir=logs_dir))
+
         try:
-            app._check_terraform_availability()
-            app._check_terraform_inventory_availability()
             app.run()
 
         except TankError as e:
@@ -149,7 +168,9 @@ def main():
         # FIXME better signal handling
         except CaughtSignal as e:
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
-            print('\n%s' % e)
+
+            print(f'{e}')
+
             app.exit_code = 0
 
 

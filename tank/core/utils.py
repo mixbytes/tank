@@ -7,6 +7,7 @@ import os
 import re
 import json
 import hashlib
+from typing import List
 
 import yaml
 
@@ -44,3 +45,28 @@ def grep_dir(dirname: str, filter_regex: str = None, isdir: bool = False):
         contents = filter(lambda name: os.path.isdir(os.path.join(dirname, name)), contents)
 
     return contents
+
+
+def ratio_from_percent(percent: int) -> float:
+    """Convert percent to ratio."""
+    return percent / 100
+
+
+def split_evenly(number: int, count: int) -> List[int]:
+    """Return mostly equal parts.
+
+    Example: number = 11, count = 3, result = [4, 4, 3]
+    """
+    parts = []
+
+    for _ in range(count):
+        if number % count:
+            parts.append(number // count + 1)
+            number -= parts[-1]
+        else:
+            parts.append(number // count)
+            number -= parts[-1]
+
+        count -= 1
+
+    return parts

@@ -1,0 +1,89 @@
+type: object
+additionalProperties: False
+required:
+  - binding
+  - instances
+
+definitions:
+  count:
+    type: integer
+    minimum: 1  # count must by greater than 0
+
+  packetloss:
+    type: integer
+    minimum: 0
+    maximum: 99
+
+  type:
+    type: string
+    enum: ["micro", "small", "standard", "large", "xlarge", "xxlarge", "huge"]
+
+  regions:
+    type: object
+
+    properties:
+      Europe: {$ref: "#/definitions/minimal-configuration"}
+      Asia: {$ref: "#/definitions/minimal-configuration"}
+      NorthAmerica: {$ref: "#/definitions/minimal-configuration"}
+      random: {$ref: "#/definitions/minimal-configuration"}
+
+    additionalProperties: False
+
+  params:
+    type: object
+
+    properties:
+      count: {$ref: "#/definitions/count"}
+      type: {$ref: "#/definitions/type"}
+      packetloss: {$ref: "#/definitions/packetloss"}
+
+    required:
+      - count
+
+    additionalProperties: False
+
+  minimal-configuration:
+    oneOf:
+      - $ref: "#/definitions/count"
+      - $ref: "#/definitions/params"
+
+  with-regions-configuration:
+    type: object
+
+    properties:
+      count: {$ref: "#/definitions/count"}
+      regions: {$ref: "#/definitions/regions"}
+      type: {$ref: "#/definitions/type"}
+      packetloss: {$ref: "#/definitions/packetloss"}
+
+    required:
+      - regions
+
+    additionalProperties: False
+
+properties:
+  binding:
+    type: string
+
+  instances:
+    type: object
+
+    properties:
+      type: {$ref: "#/definitions/type"}
+      packetloss: {$ref: "#/definitions/packetloss"}
+
+    propertyNames:
+      pattern: "^[A-Za-z_]{1,28}$"
+
+    additionalProperties:
+        oneOf:
+          - $ref: "#/definitions/count"
+          - $ref: "#/definitions/params"
+          - $ref: "#/definitions/with-regions-configuration"
+
+  ansible:
+    type: object
+    additionalProperties:
+      oneOf:
+        - type: integer
+        - type: string

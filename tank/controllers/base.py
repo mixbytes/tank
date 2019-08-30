@@ -1,6 +1,7 @@
 
-from cement import Controller, ex
+from cement import Controller
 from cement.utils.version import get_version_banner
+
 from tank.version import get_version
 
 VERSION_BANNER = """
@@ -19,9 +20,10 @@ class Base(Controller):
         # controller level arguments. ex: 'tank --version'
         arguments = [
             # add a version banner
-            (['-v', '--version'],
-             {'action': 'version',
-                'version': VERSION_BANNER}),
+            (
+                ['-v', '--version'],
+                {'action': 'version', 'version': VERSION_BANNER},
+            ),
         ]
 
     def _default(self):

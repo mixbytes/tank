@@ -11,7 +11,53 @@ from tank.core.testcase import TestCase
 from tank.core.lambdas import first, second
 
 
-class Cluster(Controller):
+class BaseClusterController(Controller):
+    """Base controller for overriding."""
+
+    def _deploy(self):
+        testcase = TestCase(first(self.app.pargs.testcase), self.app)
+        run = Run.new_run(self.app, testcase)
+        print('Created tank run: {}'.format(run.run_id))
+
+        run.init()
+        run.create()
+        run.dependency()
+        run.provision()
+
+        self._show_hosts(run.inspect())
+        print('\nTank run id: {}'.format(run.run_id))
+
+    def _show_hosts(self, run_inspect_data):
+        if 'cluster' not in run_inspect_data:
+            raise TankError('There are no information about hosts. Have you performed provision/deploy?')
+
+        rows = sorted([[ip, i['hostname']] for ip, i in run_inspect_data['cluster'].items()], key=second)
+        print(tabulate(list(rows), headers=['IP', 'HOSTNAME']))
+
+        for ip, info in run_inspect_data['cluster'].items():
+            if info['hostname'].endswith('-monitoring'):
+                print('\nMonitoring: http://{}:3000/'.format(ip))
+                break
+
+
+class EmbeddedCluster(BaseClusterController):
+    """Embedded cluster controller for providing short commands."""
+
+    class Meta:
+        label = 'embedded cluster'
+        stacked_type = 'embedded'
+        stacked_on = 'base'
+
+    @ex(
+        help='Create and setup a cluster (init, create, dependency, provision)',
+        arguments=[(['testcase'], {'type': str, 'nargs': 1})]
+    )
+    def run(self):
+        """Equal with cluster deploy."""
+        self._deploy()
+
+
+class NestedCluster(BaseClusterController):
 
     class Meta:
         label = 'cluster'
@@ -42,7 +88,7 @@ class Cluster(Controller):
     @ex(help='Init a Tank run, download plugins and modules for Terraform', hide=True,
         arguments=[(['testcase'], {'type': str, 'nargs': 1})])
     def init(self):
-        testcase = TestCase(first(self.app.pargs.testcase))
+        testcase = TestCase(first(self.app.pargs.testcase), self.app)
         run = Run.new_run(self.app, testcase)
         print('Created tank run: {}'.format(run.run_id))
 
@@ -106,26 +152,9 @@ class Cluster(Controller):
         if info_type == 'hosts':
             self._show_hosts(data)
 
-    @ex(help='Create and setup a cluster (init, create, dependency, provision)',
-        arguments=[(['testcase'], {'type': str, 'nargs': 1})])
+    @ex(
+        help='Create and setup a cluster (init, create, dependency, provision)',
+        arguments=[(['testcase'], {'type': str, 'nargs': 1})]
+    )
     def deploy(self):
-        testcase = TestCase(first(self.app.pargs.testcase))
-        run = Run.new_run(self.app, testcase)
-        print('Created tank run: {}'.format(run.run_id))
-
-        run.init()
-        run.create()
-        run.dependency()
-        run.provision()
-
-        self._show_hosts(run.inspect())
-        print('\nTank run id: {}'.format(run.run_id))
-
-
-    def _show_hosts(self, run_inspect_data):
-        if 'cluster' not in run_inspect_data:
-            raise TankError('There are no information about hosts. Have you performed provision/deploy?')
-
-        rows = sorted([[ip, i['hostname']] for ip, i in run_inspect_data['cluster'].items()], key=second)
-        print(tabulate(list(rows), headers=['IP', 'HOSTNAME']))
-
+        self._deploy()

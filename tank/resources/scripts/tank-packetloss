@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+loss_percentage=$2
+
+function add(){
+  iptables -A INPUT -m comment --comment "TANK: packetloss" \
+      -i lo \
+      -j ACCEPT
+  iptables -A OUTPUT -m comment --comment "TANK: packetloss" \
+      -o lo \
+      -j ACCEPT
+  iptables -A INPUT -m comment --comment "TANK: packetloss" \
+      -p tcp -m multiport --dports 8080,9100,3000,9090 \
+      -m state --state NEW,ESTABLISHED \
+      -j ACCEPT
+  iptables -A OUTPUT -m comment --comment "TANK: packetloss" \
+      -p tcp -m multiport --sports 8080,9100,3000,9090 \
+      -m state --state ESTABLISHED \
+      -j ACCEPT
+  iptables -A INPUT -m comment --comment "TANK: packetloss" \
+	  -m multiport -p tcp --sports 1:1024 \
+	  -j ACCEPT
+  iptables -A OUTPUT -m comment --comment "TANK: packetloss" \
+	  -m multiport -p tcp --sports 1:1024 \
+	  -j ACCEPT
+  iptables -A INPUT -m comment --comment "TANK: packetloss" \
+	  -m multiport -p tcp --dports 1025:65535 \
+	  -m statistic --mode random --probability ${loss_percentage} \
+	  -j DROP
+  iptables -A OUTPUT -m comment --comment "TANK: packetloss" \
+	  -m multiport -p tcp --dports 1025:65535 \
+	  -m statistic --mode random --probability ${loss_percentage} \
+	  -j DROP
+}
+
+function delete(){
+  _current_packetloss_rules_input=$(iptables -L INPUT --line-numbers | grep "TANK: packetloss"|awk '{print $1}')
+  _current_packetloss_rules_output=$(iptables -L OUTPUT --line-numbers | grep "TANK: packetloss"|awk '{print $1}')
+  while read -r input_rule_num;
+  do
+    iptables -D INPUT ${input_rule_num}
+  done <<< $_current_packetloss_rules_input
+  while read -r output_rule_num;
+  do
+    iptables -D OUTPUT ${output_rule_num}
+  done <<< $_current_packetloss_rules_output
+}
+
+function main(){
+  _sub_cmd=$1
+  _sub_params=$2
+  case ${_sub_cmd} in
+    add)
+      add $2
+      ;;
+    delete)
+      delete
+      ;;
+    *)
+      echo "subcommand not found"
+  esac
+}
+
+main ${@}
