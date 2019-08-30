@@ -207,7 +207,7 @@ The options are:
 
 * `type` - an instance type, which is a cloud-agnostic machine size.
 Available types: micro (~1 GB mem), small (~2 GB mem), standard (4GB), large (8GB), xlarge (16GB), xxlarge (32GB), huge (64GB)
-* `packetloss` - simulates bad network operation - percent of packets lost
+* `packetloss` - simulates bad network operation - percent of packets lost. Note: TCP ports 1..1024 are not packetloss-ed.
 
 ##### Instance configuration examples
 
