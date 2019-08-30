@@ -2,10 +2,10 @@
 
 ### Changing a blockchain node image
 
-In development it's sometimes useful to test a blockchain node image that differs from the one specified in the binding.
+Sometimes (e.g. during development) it's useful to test a blockchain node image rather than the one specified in the binding.
 
-This can be achieved by redefining the corresponding Ansible variable in a testcase.
-E.g., in case of Polkadot you can write the following testcase:
+To do so, redefine a corresponding Ansible variable in a testcase.
+E.g. for Polkadot case, you can write the following testcase:
 
 ```yaml
 binding: polkadot

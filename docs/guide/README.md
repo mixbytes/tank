@@ -336,7 +336,7 @@ The `cluster deploy` command actually does the following steps:
 These steps can be executed step by step or repeated. This is low-level tank usage.
 Tank does not check for the correct order or applicability of these operations if you run them manually.
 
-For more information see `tank cluster -h`
+For more information call `tank cluster -h`
 
 #### init
 
