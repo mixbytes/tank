@@ -3,7 +3,7 @@ tank:
   provider: digitalocean
   ansible:
     forks: 40  # number of parallel processes to use during cluster provisioning
-  # Optional. Login and password for access to monitoring
+  # Optional. Login and password to access monitoring
   monitoring:
     admin_user: "your_login"
     admin_password: "your_password"

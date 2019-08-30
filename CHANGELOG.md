@@ -2,23 +2,23 @@
 
 ## 1.0
 
-Added support of geographically distributed testing, network packetloss.
+Added support of geographically distributed testing, network packet loss
 
-Lots of usability improvements.
+Numerous usability improvements
 
 
 ## 0.2
 
-Added support of test cases.
+Added support of test cases
 
-Added support of different blockchains via so-called bindings.
+Added support of different blockchains via so-called bindings
 
 
 ## 0.1
 
-Rewritten in Python.
+Rewritten in Python
 
 
 ## 0.0.1
 
-Initial release.
+Initial release

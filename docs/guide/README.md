@@ -10,7 +10,7 @@
 ### Terraform & Terraform-Inventory
 
 You don't need to worry about installation of these tools.
-Everything will be installed to `~/.tank/bin` directory automatically when the first `Run` object will be created.
+Everything will be automatically installed in the `~/.tank/bin` directory when the first `Run` object is created.
 
 ### Optional: create virtualenv
 
@@ -56,9 +56,9 @@ The user config contains cloud provider configurations, pointer to the current c
 #### Cloud provider configuration
 
 Please configure at least one cloud provider. The essential steps are:
-* providing (and possibly creating) a key pair;
-* registering a public key with your cloud provider (if needed);
-* specifying a cloud provider access token or credentials.
+* providing (and possibly creating) a key pair
+* registering a public key with your cloud provider (if needed)
+* specifying a cloud provider access token or credentials
 
 We recommend creating a distinct key pair for benchmarking purposes.
 The key must not be protected with a passphrase.
@@ -101,7 +101,7 @@ Note: these options affect only Tank logging. Terraform and Ansible won't be aff
 
 A Tank testcase describes a benchmark scenario.
 
-The simple example can be found at [docs/testcase_example.yml](../testcase_example.yml).
+A simple example can be found at [docs/testcase_example.yml](../testcase_example.yml).
 
 Principal testcase contents are a current blockchain binding name and configuration of instances.
 
@@ -121,7 +121,7 @@ You shouldn't worry about writing or understanding a binding unless you want to 
 
 #### Blockchain instances
 
-A blockchain cluster consists of a number of different *instance roles*, e.g. fullnodes and miners/validators.
+A blockchain cluster consists of a number of different *instance roles*, e.g. full nodes and miners/validators.
 Available roles depend on the binding used.
 
 A *blockchain instances configuration* is a set of *role configurations*.
@@ -135,7 +135,7 @@ instances:
 
 ##### role configuration
 
-A *role configuration* is a number in the simplest case. The number specifies how many servers to set up with this role installed.
+A *role configuration* is a number in the simplest case. The number specifies how many servers should be set up for the role to be installed.
 
 ```yaml
 instances:
@@ -156,9 +156,9 @@ instances:
 
 ##### region configuration
 
-A region configuration provides *region options* per a region name.
+A region configuration provides *region options* for region names.
 
-In the simplest case, a region configuration says how many role instances to set up per region:
+In the simplest case, a region configuration says how many role instances per region should be set up:
 
 ```yaml
 instances:
@@ -173,22 +173,20 @@ A region name is one of the following: `Europe`, `Asia`, `NorthAmerica`, `random
 
 `Europe`, `Asia`, `NorthAmerica` region names are self-explanatory.
 
-`default` region is a synonym for default region used by Tank.
-
-`random` region says that instances must be distributed evenly across available regions.
+`random` region indicates that instances must be distributed evenly across available regions.
 
 Region names are cloud provider-agnostic and can be configured in `~/.tank/regions.yml` (by default the predefined region config is copied and used at the moment of the first run creation).
 
-In the common case a *region options* can be written as a set of various options - generally applicable and region-specific.
+In general, a *region options* can be written as a set of various options - that are generally applicable and region-specific.
 
-* `count` region option specifies how many servers to set up into the region.
+* `count` region option specifies how many servers should be set up in the region.
 
 ##### Generally applicable options
 
-Generally applicable options can be specified in the number of contexts: *instances*, *role configuration*, *region configuration*.
+Generally applicable options can be specified in a number of contexts: *instances*, *role configuration*, *region configuration*.
 
-More local contexts has higher precedence over wrapping contextes,
-e.g. an option specified in a role configuration takes precedence over the same option specified on the `instances` level:
+More local contexts have higher precedence over wrapping contexts,
+e.g. an option specified in a role configuration takes precedence over the same option specified at the `instances` level:
 
 ```yaml
 instances:
@@ -207,13 +205,13 @@ The options are:
 
 * `type` - an instance type, which is a cloud-agnostic machine size.
 Available types: micro (~1 GB mem), small (~2 GB mem), standard (4GB), large (8GB), xlarge (16GB), xxlarge (32GB), huge (64GB)
-* `packetloss` - simulates bad network operation - percent of packets lost. Note: TCP ports 1..1024 are not packetloss-ed.
+* `packetloss` - simulates bad network operation and sets the percent of lost packets. Note: TCP ports 1..1024 are not packetloss-ed.
 
 ##### Instance configuration examples
 
-The simple geographically distributed test case - [docs/testcase_geo_example.yml](../testcase_geo_example.yml).
+A simple geographically distributed test case - [docs/testcase_geo_example.yml](../testcase_geo_example.yml).
 
-An example utilizing generally applicable options and a region configuration - [docs/testcase_geo_advanced_example.yml](../testcase_geo_advanced_example.yml).
+An example of utilizing generally applicable options and a region configuration can be found here [docs/testcase_geo_advanced_example.yml](../testcase_geo_advanced_example.yml).
 
 #### Ansible variables forwarding
 
@@ -256,17 +254,17 @@ Monitoring: http://167.71.36.231:3000/
 Tank run id: festive_lalande
 ```
 
-Also you can see the monitoring link - that's where all the metrics are (see below).
+You can also see the monitoring link - that's where all the metrics are collected (see below).
 
 The cluster is up and running at this moment.
 You can see its state on the dashboards or query cluster information via `info` and `inspect` commands (see below).
 
 ### Log in to the monitoring
 
-Tank uses ***grafana*** to visualise benchmark metrics. In order to access your ***grafana*** dashboard open the monitoring link in your browser.
+Tank uses ***grafana*** to visualize benchmark metrics. In order to access your ***grafana*** dashboard open the monitoring link in your browser.
 Access to dashboard requires entering ***grafana*** username and password.
-***Grafana*** username and password can be defined by user in `monitoring` option of the `tank` section in your `~/.tank.yml` configuration file.
-If you did not define these variables in your configuration file, type 'tank' in username and password fields.
+You can modify ***Grafana*** username and password in the in the `~/.tank.yml` configuration file (go to `monitoring` in the `tank` section).
+If you have not defined these variables in your configuration file, type in 'tank' in the username and password fields.
 You will see cluster metrics in the predefined dashboards.
 You can query the metrics at `http://{the monitoring ip}:3000/explore`.
 
@@ -335,27 +333,27 @@ The `cluster deploy` command actually does the following steps:
 * provision
 
 These steps can be executed step by step or repeated. This is low-level tank usage.
-Tank does not check for correct order or applicability of this operations if you run them manually.
+Tank does not check for the correct order or applicability of these operations if you run them manually.
 
 For more information see `tank cluster -h`
 
 #### init
 
-Creates a run and prepares Terraform execution.
+It creates a run and prepares Terraform execution.
 
 #### plan
 
-This is a read-only command. Generates and shows an execution plan by Terraform.
+This is a read-only command that generates and shows an execution plan by Terraform.
 The plan shows cloud resources that will be created during `create`.
 
 #### create
 
-Creates a cluster in a cloud by calling Terraform for the run.
+It creates a cluster in a cloud by calling Terraform for the run.
 
 #### dependency
 
-Installs necessary Ansible dependencies (roles) for the run.
+It installs necessary Ansible dependencies (roles) for the run.
 
 #### provision
 
-Sets up all necessary software on the cluster by calling Ansible for the run.
+It sets up all necessary software in a cluster by calling Ansible for the run.
