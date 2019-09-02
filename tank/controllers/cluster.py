@@ -36,7 +36,7 @@ class BaseClusterController(Controller):
 
         for ip, info in run_inspect_data['cluster'].items():
             if info['hostname'].endswith('-monitoring'):
-                print('\nMonitoring: http://{}:3000/'.format(ip))
+                print('\nMonitoring: http://{}/'.format(ip))
                 break
 
 

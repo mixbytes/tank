@@ -58,12 +58,11 @@ The example can be found at [docs/testcase_example.yml](docs/testcase_example.ym
 tank cluster deploy <testcase file>
 ```
 
-As a result, the cluster instance listing will be printed along with the run id.
+As a result, the cluster instance listing will be printed along with the run id and the monitoring link.
 
 ### 4. Log in to the monitoring
 
-Locate the IP-address of the newly-created instance which name ends with `-monitoring`.
-Open `http://{monitoring ip}:3000/dashboards` in your browser, type in 'tank' in the username and password fields.
+Open the monitoring link in your browser, type in 'tank' in the username and password fields.
 You will see cluster metrics in the predefined dashboards.
 
 ### 5. List current active runs
