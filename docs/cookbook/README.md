@@ -1,11 +1,11 @@
 # Cookbook
 
-### Changing blockchain node image
+### Changing a blockchain node image
 
-Sometimes, e.g. during develpment, it's usefull to test a blockchain node image other than the one specified in the binding.
+Sometimes (e.g. during development) it's useful to test a blockchain node image rather than the one specified in the binding.
 
-This can be achieved with redefinition of corresponding Ansible variable in a testcase.
-E.g., in case of the Polkadot you can write the following testcase:
+To do so, redefine a corresponding Ansible variable in a testcase.
+E.g. for Polkadot case, you can write the following testcase:
 
 ```yaml
 binding: polkadot
@@ -20,15 +20,15 @@ ansible:
 
 ### Alternative binding version
 
-Sometimes it is not enough to tweak a couple of Ansible variables as described above, and you want to make changes to the binding.
+Sometimes it is not enough to tweak a couple of Ansible variables as described above, and you may want to make changes to the binding.
 
-Bindings can be configured in `~/.tank/bindings.yml` (by default the predefined binding config is copied and used at the moment of the first run creation).
+Bindings can be configured in `~/.tank/bindings.yml` (by default the predefined binding config is copied during the first run creation).
 
 You can create your own binding with any name and supply a git link to the binding Ansible role.
 The link can be accompanied with a branch / tag name to use.
 
 Fork an existing binding into a new repository. Alternatively, you can create a branch in the existing binding repository.
-Make desired changes in the repository.
+Make the desired changes in the repository.
 
 Configure a new binding in `~/.tank/bindings.yml`:
 

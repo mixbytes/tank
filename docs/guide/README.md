@@ -62,6 +62,7 @@ Please configure at least one cloud provider. The essential steps are:
 
 We recommend creating a distinct key pair for benchmarking purposes.
 The key must not be protected with a passphrase.
+Make sure that the permissions of the private key are 0600 or 0400 (i.e. the private key is not accessible by anyone except the owner).
 The simplest way is:
 
 ```shell
@@ -103,7 +104,7 @@ A Tank testcase describes a benchmark scenario.
 
 A simple example can be found at [docs/testcase_example.yml](../testcase_example.yml).
 
-Principal testcase contents are a current blockchain binding name and configuration of instances.
+Principal testcase contents are a current blockchain binding name and the configuration of instances.
 
 #### Blockchain binding
 
@@ -335,7 +336,7 @@ The `cluster deploy` command actually does the following steps:
 These steps can be executed step by step or repeated. This is low-level tank usage.
 Tank does not check for the correct order or applicability of these operations if you run them manually.
 
-For more information see `tank cluster -h`
+For more information call `tank cluster -h`
 
 #### init
 

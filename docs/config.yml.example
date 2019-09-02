@@ -15,6 +15,7 @@ digitalocean:
   #   ssh-keygen -t rsa -b 2048 -f bench_key
   # (leave passphrase empty)
   # Please provide the full path to the private key.
+  # Make sure that the permissions of the file are 0600 or 0400.
   pvt_key: /home/eenae/bench_temp_key
 
   # MD5 fingerprint of the public key.

@@ -30,6 +30,12 @@ Discuss in our chat: [https://t.me/MixBytes](https://t.me/MixBytes).
 pip3 install mixbytes-tank
 ```
 
+Use the `--pre` option to get the latest release candidate:
+
+```shell
+pip3 install mixbytes-tank --pre
+```
+
 
 ## Usage
 
@@ -87,3 +93,17 @@ tank cluster bench <run id> <load profile js> [--tps N] [--total-tx N]
 ```shell
 tank cluster destroy <run id>
 ```
+
+
+# Development
+
+## Branching
+
+features -> `develop` -> `master`.
+
+`master` is production-ready code.
+
+`develop` is expected-to-be production-ready code which is merged into master after thorough testing
+(so, no faulty code in `develop` pls).
+
+`develop` and `master` branches are permanent.
