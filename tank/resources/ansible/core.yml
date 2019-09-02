@@ -78,6 +78,7 @@
     install_promstack: true
     admin_user: "{{ monitoring_user_login }}"
     admin_password: "{{ monitoring_user_password }}"
+    grafana_http_port: 80
   roles:
     - role: tank.blockchain
   tasks:
