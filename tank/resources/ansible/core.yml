@@ -66,8 +66,6 @@
     - debug: msg="Docker Engine installed"
       tags: [print_action]
 
-- import_playbook: common.yml
-
 - import_playbook: "{{ blockchain_ansible_playbook }}"
 
 - name: Converge monitoring node
@@ -80,6 +78,7 @@
     install_promstack: true
     admin_user: "{{ monitoring_user_login }}"
     admin_password: "{{ monitoring_user_password }}"
+    grafana_http_port: 80
   roles:
     - role: tank.blockchain
   tasks:

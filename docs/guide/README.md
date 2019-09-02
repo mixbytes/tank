@@ -250,7 +250,7 @@ IP             HOSTNAME
 167.71.36.222  tank-polkadot-db2d81e031a1-producer-0
 165.22.74.160  tank-polkadot-db2d81e031a1-producer-1
 
-Monitoring: http://167.71.36.231:3000/
+Monitoring: http://167.71.36.231/
 
 Tank run id: festive_lalande
 ```
@@ -267,7 +267,7 @@ Access to dashboard requires entering ***grafana*** username and password.
 You can modify ***Grafana*** username and password in the in the `~/.tank.yml` configuration file (go to `monitoring` in the `tank` section).
 If you have not defined these variables in your configuration file, type in 'tank' in the username and password fields.
 You will see cluster metrics in the predefined dashboards.
-You can query the metrics at `http://{the monitoring ip}:3000/explore`.
+You can query the metrics at `http://{the monitoring ip}/explore`.
 
 ### Current active runs
 
