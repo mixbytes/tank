@@ -5,6 +5,8 @@ clean:
 
 virtualenv:
 	virtualenv --prompt '|> tank <| ' env
+	env/bin/pip --version
+	env/bin/python --version
 	env/bin/pip install -r requirements-dev.txt
 	env/bin/python setup.py develop
 	@echo
