@@ -83,7 +83,7 @@ class BaseInstaller(object):
 
         if self._storage_path not in paths:
             if path_variable:
-                os.environ['PATH'] = os.pathsep.join([path_variable, self._storage_path])
+                os.environ['PATH'] = os.pathsep.join([self._storage_path, path_variable])
             else:
                 os.environ['PATH'] = self._storage_path
 
