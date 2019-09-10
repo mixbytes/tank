@@ -1,5 +1,11 @@
 # MixBytes Tank Change History
 
+## 1.0.1
+
+Fix for GCE provider
+
+Change local terraform priority
+
 ## 1.0
 
 Added support of geographically distributed testing, network packet loss
