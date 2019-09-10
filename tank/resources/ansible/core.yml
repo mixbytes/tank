@@ -81,15 +81,6 @@
     grafana_http_port: 80
   roles:
     - role: tank.blockchain
-  tasks:
-    - name: Open grafana tcp port
-      ufw:
-        rule: allow
-        port: 3000
-      tags:
-        - firewall
-    - debug: msg="Metrics collector instance ready"
-      tags: [print_action]
 
 - name: Create cluster report
   hosts: localhost

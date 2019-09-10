@@ -74,7 +74,7 @@ class CloudUserSettings:
         if 'private_interface' not in self.ansible_vars:
             self.ansible_vars['private_interface'] = {
                 CloudProvider.DIGITAL_OCEAN: 'eth0',
-                CloudProvider.GOOGLE_CLOUD_ENGINE: 'enp0s8',
+                CloudProvider.GOOGLE_CLOUD_ENGINE: 'ens4',
             }[self.provider]
 
 
@@ -102,6 +102,7 @@ required:
     - pub_key
     - pvt_key
     - cred_path
+    - project
 properties:
     pub_key:
         type: string
