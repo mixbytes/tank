@@ -81,7 +81,7 @@ resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
   name         = "tank-${var.blockchain_name}-${var.setup_id}-{{ name }}-{{ loop.index }}-${count.index}"
   count        = "{{ cfg.count }}"
   {{ machine_type(cfg.type) }}
-  zone         = "{{ cfg.region }}"
+  zone         = "{{ cfg.region }}-a"
 
 {% raw %}
   tags         = ["blockchain"]
@@ -139,7 +139,7 @@ resource "google_compute_instance" "monitoring" {
 {% raw %}
 
   zone         = "${var.region_zone}"
-  tags         = ["monitoring"]
+  tags         = ["mtrg"]
 
   boot_disk {
     initialize_params {
