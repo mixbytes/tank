@@ -156,8 +156,15 @@ class Run:
     def bench(self, load_profile: str, tps: int, total_tx: int):
         self._check_private_key_permissions()
 
-        bench_command = 'bench --common-config=/tool/bench.config.json ' \
-                        '--module-config=/tool/polkadot.bench.config.json'
+        bench_command = 'bench --common-config=/tool/bench.config.json'
+
+        if load_profile == "":
+            if self._testcase.binding == "polkadot":
+                bench_command += '--module-config=/tool/polkadot.bench.config.json'
+
+            if self._testcase.binding == "haya":
+                bench_command += '--module-config=/tool/haya.bench.config.json'
+
         if tps is not None:
             # It's assumed, that every node is capable of running the bench.
             per_node_tps = max(int(tps / self._testcase.total_instances), 1)
