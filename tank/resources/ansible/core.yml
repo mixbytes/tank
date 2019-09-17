@@ -63,7 +63,7 @@
   tasks:
     - name: "Updating apt-get before installing packages"
       apt:
-        update_cache: yes
+        cache_valid_time: 8640
       changed_when: false
 
 - name: "Install Docker and requirement packages"
