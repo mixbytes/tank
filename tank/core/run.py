@@ -323,7 +323,7 @@ class Run:
         del self._app.children_processes[0]
 
     def _run_sh_commands(self, commands: List[sh.Command], arguments: List[list], cwd=None):
-        assert len(commands) == len(arguments)
+        assert len(commands) == len(arguments), "for each command in the command list must be list of arguments"
         
         for i in range(len(commands)):
             args_for_command = arguments[i]

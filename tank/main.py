@@ -175,7 +175,6 @@ def main():
                 for child_process in app.children_processes:
                     child_process.signal(e.signum)
 
-
             print(f'{e}')
 
             app.exit_code = 0
