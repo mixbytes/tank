@@ -23,6 +23,7 @@
         inventory_dir: "{{ hostvars[item].inventory_dir }}"
       loop: "{{ groups['all'] }}"
       when: '"boot" in hostvars[item]["ansible_hostname"]'
+      changed_when: false
     - name: "Add all nodes to group bcpeers"
       tags:
         - always
@@ -32,6 +33,7 @@
         inventory_dir: "{{ hostvars[item].inventory_dir }}"
       loop: "{{ groups['all'] }}"
       when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"]'
+      changed_when: false
     - name: "Add monitnoring nodes to group monitoring_peer"
       tags:
         - always
@@ -42,6 +44,7 @@
         inventory_dir: "{{ hostvars[item].inventory_dir }}"
       loop: "{{ groups['all'] }}"
       when: '"monitoring" in hostvars[item]["ansible_hostname"]'
+      changed_when: false
     - name: "Add all nodes to group allnodes"
       tags:
         - always
@@ -51,6 +54,17 @@
         inventory_dir: "{{ hostvars[item].inventory_dir }}"
       loop: "{{ groups['all'] }}"
       when: '"prod" in hostvars[item]["ansible_hostname"] or "boot" in hostvars[item]["ansible_hostname"] or "full" in hostvars[item]["ansible_hostname"]'
+      changed_when: false
+
+- name: "Updating packages on instances"
+  hosts: all
+  become: true
+  gather_facts: smart
+  tasks:
+    - name: "Updating apt-get before installing packages"
+      apt:
+        cache_valid_time: 8640
+      changed_when: false
 
 - name: "Install Docker and requirement packages"
   hosts: all
