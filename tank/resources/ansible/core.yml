@@ -59,12 +59,12 @@
 - name: "Updating packages on instances"
   hosts: all
   become: true
-  gather_facts: smartz
+  gather_facts: smart
   tasks:
     - name: "Updating apt-get before installing packages"
       apt:
-        update-cache: yes
-      changed_when: 0
+        update_cache: yes
+      changed_when: false
 
 - name: "Install Docker and requirement packages"
   hosts: all
