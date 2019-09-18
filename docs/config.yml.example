@@ -44,5 +44,7 @@ gce:
 
   # Public key to manage benchmark instances.
   pub_key: /home/eenae/bench_temp_key.pub
-
+  
+  # Google Cloud Project ID and path to file with credentials 
+  project: noble-district-987654
   cred_path: /home/eenae/.ssh/gce.json
