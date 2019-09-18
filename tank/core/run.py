@@ -144,16 +144,16 @@ class Run:
         }
 
         with self._lock:
-            command_args = [
-                "-f", self._app.ansible_config['forks'],
-                "-u", "root",
-                "-i", self._app.terraform_inventory_run_command,
-                "--extra-vars", self._ansible_extra_vars(extra_vars),
-                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
-                resource_path('ansible', 'core.yml')
-            ]
-
-            provision_command = PreparedCommand(cmd=sh.Command("ansible-playbook"), args=command_args)
+            provision_command = PreparedCommand(cmd=sh.Command("ansible-playbook"),
+                                                args=[
+                                                    "-f", self._app.ansible_config['forks'],
+                                                    "-u", "root",
+                                                    "-i", self._app.terraform_inventory_run_command,
+                                                    "--extra-vars", self._ansible_extra_vars(extra_vars),
+                                                    "--private-key={}".format(
+                                                        self._app.cloud_settings.provider_vars['pvt_key']),
+                                                    resource_path('ansible', 'core.yml')
+                                                ])
 
             self._run_sh_commands([provision_command], cwd=self._tf_plan_dir)
 
