@@ -86,7 +86,7 @@ class MixbytesTank(App):
     def __init__(self):
         super().__init__()
         self._cloud_settings = None
-        self.children_processes = list()
+        self.child_process = None
 
     def setup(self):
         super(MixbytesTank, self).setup()
@@ -171,9 +171,9 @@ def main():
         except CaughtSignal as e:
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
 
-            if e.signum in {SIGINT, SIGTERM}:
-                for child_process in app.children_processes:
-                    child_process.signal(e.signum)
+            if e.signum in {SIGINT, SIGTERM} and app.child_process is not None:
+                print('I AM HERE')
+                app.child_process.signal(e.signum)
 
             print(f'{e}')
 

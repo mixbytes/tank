@@ -8,6 +8,7 @@ import re
 import json
 import hashlib
 from typing import List
+from collections import namedtuple
 
 import yaml
 
@@ -70,3 +71,6 @@ def split_evenly(number: int, count: int) -> List[int]:
         count -= 1
 
     return parts
+
+
+PreparedCommand = namedtuple('PreparedCommand', ['cmd', 'args'])
