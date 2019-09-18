@@ -78,14 +78,13 @@ class Run:
         with self._lock:
             self._generate_tf_plan()
 
-            commands = [
-                PreparedCommand(
-                    cmd=sh.Command(self._app.terraform_run_command),
-                    args=["init", "-backend-config", "path={}".format(self._tf_state_file), self._tf_plan_dir]
-                )
-            ]
+            init_command = PreparedCommand(cmd=sh.Command(self._app.terraform_run_command),
+                                           args=[
+                                               "init", "-backend-config",
+                                               "path={}".format(self._tf_state_file), self._tf_plan_dir
+                                           ])
 
-            self._run_sh_commands(commands)
+            self._run_sh_commands([init_command])
 
     def plan(self):
         """
@@ -323,8 +322,8 @@ class Run:
         assert self._app.child_process is not None, "No children process is up"
         self._app.child_process = None
 
-    def _run_sh_commands(self, commands: List[PreparedCommand], cwd=None):
-        for command in commands:
+    def _run_sh_commands(self, prepared_commands: List[PreparedCommand], cwd=None):
+        for command in prepared_commands:
             running_command = command.cmd(*command.args,
                                           _env=self._make_env(), _out=sys.stdout, _err=sys.stderr,
                                           _bg=True, _done=self._delete_process_after_exit, _cwd=cwd
