@@ -1,4 +1,4 @@
-# MixBytes Tank
+# MixBytes Tank [![master](https://travis-ci.org/mixbytes/tank.svg?branch=master)](https://travis-ci.org/mixbytes/tank)
 
 MixBytes Tank is a console tool which can set up a blockchain cluster in minutes in a cloud and bench it using various transaction loads.
 It'll highlight blockchain problems and give insights into performance and stability of the technology.
