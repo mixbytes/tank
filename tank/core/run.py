@@ -13,6 +13,7 @@ from uuid import uuid4
 import json
 from datetime import datetime
 from typing import List
+from collections import namedtuple
 
 import sh
 from cement import fs
@@ -24,8 +25,11 @@ from tank.core.binding import AnsibleBinding
 from tank.core.exc import TankError, TankConfigError
 from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
-from tank.core.utils import PreparedCommand, yaml_load, yaml_dump, grep_dir, json_load, sha256
+from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
 from tank.terraform_installer import TerraformInstaller, TerraformInventoryInstaller
+
+
+PreparedCommand = namedtuple('PreparedCommand', ['cmd', 'args'])
 
 
 class Run:
@@ -108,7 +112,6 @@ class Run:
             create_command = PreparedCommand(cmd=sh.Command(self._app.terraform_run_command),
                                              args=["apply", "-auto-approve", "-parallelism=51", self._tf_plan_dir]
                                              )
-
             self._run_sh_commands([create_command])
 
     def dependency(self):
