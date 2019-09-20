@@ -172,7 +172,6 @@ def main():
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
 
             if e.signum in {SIGINT, SIGTERM} and app.child_process is not None:
-                print('I AM HERE')
                 app.child_process.signal(e.signum)
 
             print(f'{e}')
