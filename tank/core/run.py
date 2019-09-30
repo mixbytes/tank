@@ -12,6 +12,8 @@ from typing import Dict
 from uuid import uuid4
 import json
 from datetime import datetime
+from typing import List
+from collections import namedtuple
 
 import sh
 from cement import fs
@@ -25,6 +27,9 @@ from tank.core.testcase import TestCase
 from tank.core.tf import PlanGenerator
 from tank.core.utils import yaml_load, yaml_dump, grep_dir, json_load, sha256
 from tank.terraform_installer import TerraformInstaller, TerraformInventoryInstaller
+
+
+PreparedCommand = namedtuple('PreparedCommand', ['cmd', 'args'])
 
 
 class Run:
@@ -77,18 +82,25 @@ class Run:
         with self._lock:
             self._generate_tf_plan()
 
-            sh.Command(self._app.terraform_run_command)(
-                "init", "-backend-config", "path={}".format(self._tf_state_file), self._tf_plan_dir,
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+            init_command = PreparedCommand(cmd=sh.Command(self._app.terraform_run_command),
+                                           args=[
+                                               "init", "-backend-config",
+                                               "path={}".format(self._tf_state_file), self._tf_plan_dir
+                                           ])
+
+            self._run_sh_commands([init_command])
 
     def plan(self):
         """
         Generate and show an execution plan by Terraform.
         """
         with self._lock:
-            sh.Command(self._app.terraform_run_command)(
-                "plan", "-input=false", self._tf_plan_dir,
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+
+            plan_command = PreparedCommand(cmd=sh.Command(self._app.terraform_run_command),
+                                           args=["plan", "-input=false", self._tf_plan_dir]
+                                           )
+
+            self._run_sh_commands([plan_command])
 
     def create(self):
         """
@@ -97,9 +109,10 @@ class Run:
         self._check_private_key_permissions()
 
         with self._lock:
-            sh.Command(self._app.terraform_run_command)(
-                "apply", "-auto-approve", "-parallelism=51", self._tf_plan_dir,
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+            create_command = PreparedCommand(cmd=sh.Command(self._app.terraform_run_command),
+                                             args=["apply", "-auto-approve", "-parallelism=51", self._tf_plan_dir]
+                                             )
+            self._run_sh_commands([create_command])
 
     def dependency(self):
         """
@@ -113,9 +126,11 @@ class Run:
             requirements_file = fs.join(self._dir, 'ansible-requirements.yml')
             yaml_dump(requirements_file, ansible_deps)
 
-            sh.Command("ansible-galaxy")(
-                "install", "-f", "-r", requirements_file,
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+            dependency_command = PreparedCommand(cmd=sh.Command("ansible-galaxy"),
+                                                 args=["install", "-f", "-r", requirements_file]
+                                                 )
+
+            self._run_sh_commands([dependency_command])
 
     def provision(self):
         self._check_private_key_permissions()
@@ -132,14 +147,18 @@ class Run:
         }
 
         with self._lock:
-            sh.Command("ansible-playbook")(
-                "-f", self._app.ansible_config['forks'],
-                "-u", "root",
-                "-i", self._app.terraform_inventory_run_command,
-                "--extra-vars", self._ansible_extra_vars(extra_vars),
-                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
-                resource_path('ansible', 'core.yml'),
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+            provision_command = PreparedCommand(cmd=sh.Command("ansible-playbook"),
+                                                args=[
+                                                    "-f", self._app.ansible_config['forks'],
+                                                    "-u", "root",
+                                                    "-i", self._app.terraform_inventory_run_command,
+                                                    "--extra-vars", self._ansible_extra_vars(extra_vars),
+                                                    "--private-key={}".format(
+                                                        self._app.cloud_settings.provider_vars['pvt_key']),
+                                                    resource_path('ansible', 'core.yml')
+                                                ])
+
+            self._run_sh_commands([provision_command], cwd=self._tf_plan_dir)
 
     def inspect(self):
         with self._lock:
@@ -178,31 +197,40 @@ class Run:
             # send the load_profile to the cluster
             extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
 
-            sh.Command("ansible-playbook")(
-                "-f", self._app.ansible_config['forks'],
-                "-u", "root",
-                "-i", self._app.terraform_inventory_run_command,
-                "--extra-vars", self._ansible_extra_vars(extra_vars),
-                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
-                "-t", "send_load_profile",
-                fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'send_load_profile.yml'),
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+            upload_profile = PreparedCommand(
+                cmd=sh.Command("ansible-playbook"),
+                args=[
+                    "-f", self._app.ansible_config['forks'],
+                    "-u", "root",
+                    "-i", self._app.terraform_inventory_run_command,
+                    "--extra-vars", self._ansible_extra_vars(extra_vars),
+                    "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
+                    "-t", "send_load_profile",
+                    fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'send_load_profile.yml')
+                ]
+            )
 
-            # run the bench
-            sh.Command("ansible")(
-                '-f', '150', '-B', '3600', '-P', '10', '-u', 'root',
-                '-i', self._app.terraform_inventory_run_command,
-                '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
-                host_patterns,
-                '-a', bench_command,
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+            run_bench = PreparedCommand(
+                cmd=sh.Command("ansible"),
+                args=[
+                    '-f', '150', '-B', '3600', '-P', '10', '-u', 'root',
+                    '-i', self._app.terraform_inventory_run_command,
+                    '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
+                    host_patterns,
+                    '-a', bench_command
+                ]
+            )
+
+            commands = [upload_profile, run_bench]
+            self._run_sh_commands(commands, cwd=self._tf_plan_dir)
 
     def destroy(self):
         with self._lock:
-            sh.Command(self._app.terraform_run_command)(
-                "destroy", "-auto-approve", "-parallelism=100",
-                self._tf_plan_dir,
-                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr)
+            destroy_command = PreparedCommand(cmd=sh.Command(self._app.terraform_run_command),
+                                              args=["destroy", "-auto-approve", "-parallelism=100", self._tf_plan_dir]
+                                              )
+
+            self._run_sh_commands([destroy_command])
 
             # atomic move before cleanup
             temp_dir = fs.join(self.__class__._runs_dir(self._app), '_{}'.format(self.run_id))
@@ -292,6 +320,19 @@ class Run:
 
         if file_mode & NOT_OWNER_PERMISSION != 0:
             raise TankConfigError('Private key has wrong permission mask.')
+
+    def _delete_process_after_exit(self, *args):
+        assert self._app.child_process is not None, "No children process is up"
+        self._app.child_process = None
+
+    def _run_sh_commands(self, prepared_commands: List[PreparedCommand], cwd=None):
+        for command in prepared_commands:
+            running_command = command.cmd(*command.args,
+                                          _env=self._make_env(), _out=sys.stdout, _err=sys.stderr,
+                                          _bg=True, _done=self._delete_process_after_exit, _cwd=cwd
+                                          )
+            self._app.child_process = running_command.process
+            running_command.wait()
 
     @property
     def _dir(self) -> str:

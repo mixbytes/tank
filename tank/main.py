@@ -1,5 +1,6 @@
 import logging.config
 import os
+from signal import SIGTERM, SIGINT
 from typing import Dict
 import pathlib
 
@@ -85,6 +86,7 @@ class MixbytesTank(App):
     def __init__(self):
         super().__init__()
         self._cloud_settings = None
+        self.child_process = None
 
     def setup(self):
         super(MixbytesTank, self).setup()
@@ -168,6 +170,9 @@ def main():
         # FIXME better signal handling
         except CaughtSignal as e:
             # Default Cement signals are SIGINT and SIGTERM, exit 0 (non-error)
+
+            if e.signum in {SIGINT, SIGTERM} and app.child_process is not None:
+                app.child_process.signal(e.signum)
 
             print(f'{e}')
 
