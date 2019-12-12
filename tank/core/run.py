@@ -175,17 +175,54 @@ class Run:
     def bench(self, load_profile: str, tps: int, total_tx: int):
         self._check_private_key_permissions()
 
-        bench_command = 'bench --common-config=/tool/bench.config.json ' \
-                        '--module-config=/tool/blockchain.bench.config.json'
+        bench_command = 'bench start'
+
+        # FIXME extract hostnames from inventory, but ignore monitoring
+        ips = [ip for ip, i in self._cluster_report().items() if i['bench_present']]
+        if not ips:
+            raise TankError('There are no nodes capable of running the bench util')
+
+        total_bench_instances = len(ips)
+
         if tps is not None:
             # It's assumed, that every node is capable of running the bench.
-            per_node_tps = max(int(tps / self._testcase.total_instances), 1)
-            bench_command += ' --common.tps {}'.format(per_node_tps)
+            per_node_tps = max(int(tps / total_bench_instances), 1)
+            bench_command += ' --common.tps={}'.format(per_node_tps)
 
         if total_tx is not None:
             # It's assumed, that every node is capable of running the bench.
-            per_node_tx = max(int(total_tx / self._testcase.total_instances), 1)
-            bench_command += ' --common.stopOn.processedTransactions {}'.format(per_node_tx)
+            per_node_tx = max(int(total_tx / total_bench_instances), 1)
+            bench_command += ' --common.stopOn.processedTransactions={}'.format(per_node_tx)
+
+        host_patterns = ','.join(ips)
+
+        with self._lock:
+            # send the load_profile to the cluster
+            extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
+
+            sh.Command("ansible-playbook")(
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
+                "-i", self._app.terraform_inventory_run_command,
+                "--extra-vars", self._ansible_extra_vars(extra_vars),
+                "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
+                "-t", "send_load_profile",
+                fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'send_load_profile.yml'),
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+
+            # run the bench
+            sh.Command("ansible")(
+                '-f', '150', '-B', '3600', '-P', '10', '-u', 'root',
+                '-i', self._app.terraform_inventory_run_command,
+                '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
+                host_patterns,
+                '-a', bench_command,
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
+
+    def bench_stop(self):
+        self._check_private_key_permissions()
+
+        bench_command = 'bench stop'
 
         # FIXME extract hostnames from inventory, but ignore monitoring
         ips = [ip for ip, i in self._cluster_report().items() if i['bench_present']]
@@ -194,35 +231,15 @@ class Run:
         host_patterns = ','.join(ips)
 
         with self._lock:
-            # send the load_profile to the cluster
-            extra_vars = {'load_profile_local_file': fs.abspath(load_profile)}
+            # stop the bench
+            sh.Command("ansible")(
+                '-f', '150', '-B', '3600', '-P', '10', '-u', 'root',
+                '-i', self._app.terraform_inventory_run_command,
+                '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
+                host_patterns,
+                '-a', bench_command,
+                _env=self._make_env(), _out=sys.stdout, _err=sys.stderr, _cwd=self._tf_plan_dir)
 
-            upload_profile = PreparedCommand(
-                cmd=sh.Command("ansible-playbook"),
-                args=[
-                    "-f", self._app.ansible_config['forks'],
-                    "-u", "root",
-                    "-i", self._app.terraform_inventory_run_command,
-                    "--extra-vars", self._ansible_extra_vars(extra_vars),
-                    "--private-key={}".format(self._app.cloud_settings.provider_vars['pvt_key']),
-                    "-t", "send_load_profile",
-                    fs.join(self._roles_path, AnsibleBinding.BLOCKCHAIN_ROLE_NAME, 'tank', 'send_load_profile.yml')
-                ]
-            )
-
-            run_bench = PreparedCommand(
-                cmd=sh.Command("ansible"),
-                args=[
-                    '-f', '150', '-B', '3600', '-P', '10', '-u', 'root',
-                    '-i', self._app.terraform_inventory_run_command,
-                    '--private-key={}'.format(self._app.cloud_settings.provider_vars['pvt_key']),
-                    host_patterns,
-                    '-a', bench_command
-                ]
-            )
-
-            commands = [upload_profile, run_bench]
-            self._run_sh_commands(commands, cwd=self._tf_plan_dir)
 
     def destroy(self):
         with self._lock:

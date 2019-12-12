@@ -134,6 +134,14 @@ class NestedCluster(BaseClusterController):
         Run(self.app, first(self.app.pargs.run_id)).bench(
             first(self.app.pargs.load_profile), self.app.pargs.tps, self.app.pargs.total_tx)
 
+    @ex(help='Stops bench on prepared cluster',
+        arguments=[
+            (['run_id'],
+             {'type': str, 'nargs': 1}),
+        ])
+    def bench_stop(self):
+        Run(self.app, first(self.app.pargs.run_id)).bench_stop()
+
     @ex(help='Destroy all instances of the cluster',
         arguments=[(['run_id'], {'type': str, 'nargs': 1})])
     def destroy(self):
