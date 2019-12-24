@@ -110,10 +110,14 @@ class NestedCluster(BaseClusterController):
         Run(self.app, first(self.app.pargs.run_id)).dependency()
 
     @ex(help='Setup instances: configs, packages, services, etc', hide=True,
-        arguments=[(['run_id'], {'type': str, 'nargs': 1})])
+        arguments=[
+            (['run_id'], {'type': str, 'nargs': 1}),
+            (['--verbose', '-v'], {'action': 'count', 'default': 0,
+                                   'help': 'verbosity level, can be specified multiple times'}),
+        ])
     def provision(self):
         run = Run(self.app, first(self.app.pargs.run_id))
-        run.provision()
+        run.provision(self.app.pargs.verbose)
         self._show_hosts(run.inspect())
         print('\nTank run id: {}'.format(run.run_id))
 

@@ -132,7 +132,7 @@ class Run:
 
             self._run_sh_commands([dependency_command])
 
-    def provision(self):
+    def provision(self, verbosity: int):
         self._check_private_key_permissions()
 
         extra_vars = {
@@ -147,18 +147,19 @@ class Run:
         }
 
         with self._lock:
-            provision_command = PreparedCommand(cmd=sh.Command("ansible-playbook"),
-                                                args=[
-                                                    "-f", self._app.ansible_config['forks'],
-                                                    "-u", "root",
-                                                    "-i", self._app.terraform_inventory_run_command,
-                                                    "--extra-vars", self._ansible_extra_vars(extra_vars),
-                                                    "--private-key={}".format(
-                                                        self._app.cloud_settings.provider_vars['pvt_key']),
-                                                    resource_path('ansible', 'core.yml')
-                                                ])
+            args = [
+                "-f", self._app.ansible_config['forks'],
+                "-u", "root",
+                "-i", self._app.terraform_inventory_run_command,
+                "--extra-vars", self._ansible_extra_vars(extra_vars),
+                "--private-key", self._app.cloud_settings.provider_vars['pvt_key'],
+            ]
+            if verbosity:
+                args.append('-{}'.format('v' * verbosity))
 
-            self._run_sh_commands([provision_command], cwd=self._tf_plan_dir)
+            args.append(resource_path('ansible', 'core.yml'))
+
+            self._run_sh_commands([PreparedCommand(sh.Command("ansible-playbook"), args)], cwd=self._tf_plan_dir)
 
     def inspect(self):
         with self._lock:
