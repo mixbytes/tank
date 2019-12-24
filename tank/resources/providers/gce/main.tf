@@ -35,7 +35,7 @@ provider "google" {
 
 
 resource "google_compute_firewall" "default" {
-  name    = "firewall"
+  name    = "firewall-${var.blockchain_name}-${var.setup_id}"
   network = "default"
 
   allow {
@@ -47,7 +47,7 @@ resource "google_compute_firewall" "default" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  source_tags = ["monitoring", "blockchain"]
+  source_tags = ["monitoring-${var.blockchain_name}-${var.setup_id}", "blockchain-${var.blockchain_name}-${var.setup_id}"]
 }
 {% endraw %}
 
@@ -84,7 +84,7 @@ resource "google_compute_instance" "tank-{{ name }}-{{ loop.index }}" {
   zone         = "{{ cfg.region }}-a"
 
 {% raw %}
-  tags         = ["blockchain"]
+  tags         = ["blockchain-${var.blockchain_name}-${var.setup_id}"]
 
   boot_disk {
     initialize_params {
@@ -139,7 +139,7 @@ resource "google_compute_instance" "monitoring" {
 {% raw %}
 
   zone         = "${var.region_zone}"
-  tags         = ["mtrg"]
+  tags         = ["monitoring-${var.blockchain_name}-${var.setup_id}"]
 
   boot_disk {
     initialize_params {
