@@ -132,7 +132,7 @@ class Run:
 
             self._run_sh_commands([dependency_command])
 
-    def provision(self, verbosity: int):
+    def provision(self, verbosity: int = 0):
         self._check_private_key_permissions()
 
         extra_vars = {
