@@ -88,7 +88,7 @@
   become: true
   gather_facts: smart
   vars:
-    bc_polkadot_comp_state_monitoring: present
+    bc_comp_state_monitoring: present
     install_promstack: true
     admin_user: "{{ monitoring_user_login }}"
     admin_password: "{{ monitoring_user_password }}"
