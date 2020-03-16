@@ -1,5 +1,5 @@
 cement==3.0.4
-ansible>=2.8.0
+ansible==2.9.2
 jinja2
 pyyaml
 colorlog
